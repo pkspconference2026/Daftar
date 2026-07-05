@@ -1,0 +1,528 @@
+<!DOCTYPE html>
+<html lang="ms">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PKSP 2026 — Kaunter Pendaftaran</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html5-qrcode/2.3.8/html5-qrcode.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+<style>
+  :root{
+    --teal-900:#0B3B3C; --teal-700:#11605F; --teal-500:#178582;
+    --mist:#F2F6F5; --ink:#13292A; --line:#D7E2E0; --white:#FFFFFF;
+    --hijau:#1B9E4B; --emas:#D4A017; --biru:#1D6FD1; --merah:#D0342C; --ungu:#7A3FBF;
+    --ok-bg:#E7F6EC; --err-bg:#FBEAE8;
+  }
+  *{box-sizing:border-box; margin:0; padding:0;}
+  body{font-family:'Inter',sans-serif; background:var(--mist); color:var(--ink);}
+  h1,h2,h3,.display{font-family:'Space Grotesk',sans-serif;}
+
+  /* ===== Header ===== */
+  header{background:var(--teal-900); color:#fff; padding:14px 20px; display:flex; align-items:center; gap:14px; flex-wrap:wrap;}
+  header .logo{width:40px;height:40px;border-radius:10px;background:var(--teal-500);display:flex;align-items:center;justify-content:center;font-family:'Space Grotesk';font-weight:700;font-size:15px;}
+  header h1{font-size:1.05rem; letter-spacing:.02em;}
+  header .sub{font-size:.75rem; opacity:.75;}
+  #statHeader{margin-left:auto; display:flex; gap:18px; font-size:.8rem;}
+  #statHeader b{font-family:'Space Grotesk'; font-size:1.2rem; display:block;}
+
+  /* ===== Tabs (Lorong) ===== */
+  nav{display:flex; gap:8px; padding:12px 20px; background:var(--white); border-bottom:1px solid var(--line); overflow-x:auto;}
+  nav button{border:1.5px solid var(--line); background:var(--white); border-radius:12px; padding:10px 16px; font:600 .85rem 'Inter'; cursor:pointer; white-space:nowrap; color:var(--ink);}
+  nav button .lane{display:inline-flex;width:22px;height:22px;border-radius:6px;align-items:center;justify-content:center;color:#fff;font-family:'Space Grotesk';font-size:.75rem;margin-right:7px;}
+  nav button.active{border-color:var(--teal-700); background:var(--teal-700); color:#fff;}
+  main{max-width:960px; margin:0 auto; padding:20px;}
+  section{display:none;}
+  section.active{display:block;}
+  .card{background:var(--white); border:1px solid var(--line); border-radius:16px; padding:20px; margin-bottom:16px;}
+
+  /* ===== Lorong A: Scan ===== */
+  #reader{width:100%; max-width:420px; margin:0 auto; border-radius:14px; overflow:hidden; border:2px dashed var(--teal-500);}
+  .scanBtns{display:flex; gap:10px; justify-content:center; margin-top:14px; flex-wrap:wrap;}
+  .btn{border:none; border-radius:12px; padding:12px 20px; font:600 .9rem 'Inter'; cursor:pointer;}
+  .btn-primary{background:var(--teal-700); color:#fff;}
+  .btn-ghost{background:var(--mist); color:var(--ink); border:1.5px solid var(--line);}
+  .btn-print{background:var(--ink); color:#fff;}
+  .btn:disabled{opacity:.5; cursor:not-allowed;}
+  #manualKod{display:flex; gap:8px; max-width:420px; margin:14px auto 0;}
+  input,select,textarea{font:400 .95rem 'Inter'; padding:11px 13px; border:1.5px solid var(--line); border-radius:10px; width:100%; background:#fff;}
+  input:focus,select:focus{outline:2px solid var(--teal-500); border-color:var(--teal-500);}
+
+  /* ===== Kad hasil imbasan ===== */
+  .resultCard{border-radius:16px; padding:20px; margin-top:16px; border:1.5px solid var(--line); background:#fff;}
+  .resultCard.ok{background:var(--ok-bg); border-color:var(--hijau);}
+  .resultCard.warn{background:#FFF7E0; border-color:var(--emas);}
+  .resultCard.err{background:var(--err-bg); border-color:var(--merah);}
+  .resultCard h2{font-size:1.4rem; margin-bottom:4px;}
+  .resultCard .meta{font-size:.9rem; color:#41595a; line-height:1.5;}
+  .catChip{display:inline-block; padding:3px 12px; border-radius:99px; color:#fff; font:600 .72rem 'Inter'; text-transform:uppercase; letter-spacing:.05em; margin-top:8px;}
+
+  /* ===== Lorong B: Carian ===== */
+  #hasilCari .row{display:flex; align-items:center; gap:12px; padding:12px; border-bottom:1px solid var(--line); flex-wrap:wrap;}
+  #hasilCari .row:last-child{border-bottom:none;}
+  .row .grow{flex:1; min-width:180px;}
+  .row b{display:block;}
+  .row small{color:#5a6f70;}
+  .badgeHadir{font:600 .7rem 'Inter'; padding:3px 10px; border-radius:99px; background:var(--ok-bg); color:var(--hijau);}
+  .badgeBelum{font:600 .7rem 'Inter'; padding:3px 10px; border-radius:99px; background:var(--mist); color:#5a6f70;}
+
+  /* ===== Borang ===== */
+  .grid2{display:grid; grid-template-columns:1fr 1fr; gap:12px;}
+  @media(max-width:640px){.grid2{grid-template-columns:1fr;}}
+  label{font:600 .78rem 'Inter'; display:block; margin-bottom:5px; color:#3c5253;}
+  .field{margin-bottom:12px;}
+
+  /* ===== Statistik ===== */
+  .statGrid{display:grid; grid-template-columns:repeat(auto-fit,minmax(140px,1fr)); gap:12px;}
+  .statBox{background:var(--white); border:1px solid var(--line); border-radius:14px; padding:16px;}
+  .statBox b{font-family:'Space Grotesk'; font-size:1.8rem; display:block;}
+  .statBox span{font-size:.78rem; color:#5a6f70;}
+  .statBox .bar{height:5px; border-radius:5px; margin-top:8px;}
+  table{width:100%; border-collapse:collapse; font-size:.85rem;}
+  th,td{text-align:left; padding:9px 8px; border-bottom:1px solid var(--line);}
+  th{font:600 .72rem 'Inter'; text-transform:uppercase; letter-spacing:.04em; color:#5a6f70;}
+  .toolbar{display:flex; gap:8px; flex-wrap:wrap; margin-bottom:14px;}
+
+  #toast{position:fixed; bottom:24px; left:50%; transform:translateX(-50%); background:var(--ink); color:#fff; padding:12px 22px; border-radius:12px; font:600 .85rem 'Inter'; opacity:0; transition:opacity .25s; pointer-events:none; z-index:99;}
+  #toast.show{opacity:1;}
+
+  /* ===== TAG NAMA (cetakan) ===== */
+  #badgeArea{display:none;}
+  @media print{
+    body *{visibility:hidden;}
+    #badgeArea, #badgeArea *{visibility:visible;}
+    #badgeArea{display:block; position:fixed; inset:0;}
+    @page{size:105mm 148mm; margin:0;} /* A6 */
+  }
+  .badge{width:105mm; height:148mm; background:#fff; display:flex; flex-direction:column; font-family:'Inter';}
+  .badge .top{background:var(--teal-900); color:#fff; padding:8mm 8mm 5mm; text-align:center;}
+  .badge .top .conf{font-family:'Space Grotesk'; font-weight:700; font-size:16pt; letter-spacing:.03em;}
+  .badge .top .confSub{font-size:7.5pt; opacity:.8; margin-top:1mm;}
+  .badge .mid{flex:1; text-align:center; padding:6mm 7mm 0; display:flex; flex-direction:column; align-items:center;}
+  .badge .nama{font-family:'Space Grotesk'; font-weight:700; font-size:20pt; line-height:1.15; text-transform:uppercase;}
+  .badge .jawatan{font-size:10pt; margin-top:2.5mm; color:#33484a;}
+  .badge .org{font-size:10pt; font-weight:600; margin-top:1mm;}
+  .badge .negeri{font-size:9pt; margin-top:1mm; color:#5a6f70;}
+  .badge .qr{margin-top:5mm;}
+  .badge .qr img, .badge .qr canvas{width:26mm !important; height:26mm !important;}
+  .badge .kod{font-size:7.5pt; color:#5a6f70; margin-top:1.5mm; letter-spacing:.06em;}
+  .badge .strip{height:16mm; color:#fff; display:flex; align-items:center; justify-content:center; font-family:'Space Grotesk'; font-weight:700; font-size:13pt; letter-spacing:.12em; text-transform:uppercase;}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo">PK</div>
+  <div>
+    <h1>PKSP 2026 · Kaunter Pendaftaran</h1>
+    <div class="sub">Scan · Print · Collect</div>
+  </div>
+  <div id="statHeader">
+    <div><b id="hdrHadir">0</b>Hadir</div>
+    <div><b id="hdrTotal">0</b>Berdaftar</div>
+  </div>
+</header>
+
+<nav>
+  <button class="active" data-tab="lorongA"><span class="lane" style="background:var(--hijau)">A</span>QR Express</button>
+  <button data-tab="lorongB"><span class="lane" style="background:var(--biru)">B</span>Semakan Nama</button>
+  <button data-tab="lorongC"><span class="lane" style="background:var(--merah)">C</span>Walk-in / Urus Setia</button>
+  <button data-tab="senarai"><span class="lane" style="background:var(--teal-700)">S</span>Senarai & Statistik</button>
+</nav>
+
+<main>
+
+  <!-- ============ LORONG A ============ -->
+  <section id="lorongA" class="active">
+    <div class="card">
+      <h2 style="margin-bottom:4px;">Lorong A — QR Code Express</h2>
+      <p style="font-size:.85rem;color:#5a6f70;margin-bottom:16px;">Scan QR → Nama dipaparkan → Kehadiran direkodkan → Cetak tag nama</p>
+      <div id="reader"></div>
+      <div class="scanBtns">
+        <button class="btn btn-primary" id="btnMulaScan">📷 Mula Scan</button>
+        <button class="btn btn-ghost" id="btnHentiScan" disabled>Henti</button>
+      </div>
+      <div id="manualKod">
+        <input id="inputKod" placeholder="Atau taip kod, cth: PKSP26-A1B2" style="text-transform:uppercase;">
+        <button class="btn btn-ghost" onclick="cariIkutKod()">Cari</button>
+      </div>
+      <div id="hasilScan"></div>
+    </div>
+  </section>
+
+  <!-- ============ LORONG B ============ -->
+  <section id="lorongB">
+    <div class="card">
+      <h2 style="margin-bottom:4px;">Lorong B — Semakan Nama</h2>
+      <p style="font-size:.85rem;color:#5a6f70;margin-bottom:16px;">Untuk peserta tanpa QR: cari ikut nama, telefon atau e-mel, kemudian daftar masuk secara manual.</p>
+      <input id="inputCari" placeholder="Taip nama / telefon / e-mel…" oninput="cariPeserta()">
+      <div id="hasilCari" style="margin-top:14px;"></div>
+    </div>
+  </section>
+
+  <!-- ============ LORONG C ============ -->
+  <section id="lorongC">
+    <div class="card">
+      <h2 style="margin-bottom:4px;">Lorong C — Walk-in, VIP & Urus Setia</h2>
+      <p style="font-size:.85rem;color:#5a6f70;margin-bottom:16px;">Daftar peserta baharu pada hari kejadian dan terus cetak tag nama.</p>
+      <div class="grid2">
+        <div class="field"><label>Nama Penuh *</label><input id="wNama"></div>
+        <div class="field"><label>Jawatan</label><input id="wJawatan"></div>
+        <div class="field"><label>Hospital / Jabatan / Organisasi</label><input id="wOrg"></div>
+        <div class="field"><label>Negeri</label>
+          <select id="wNegeri">
+            <option value="">— Pilih —</option>
+            <option>Johor</option><option>Kedah</option><option>Kelantan</option><option>Melaka</option>
+            <option>Negeri Sembilan</option><option>Pahang</option><option>Perak</option><option>Perlis</option>
+            <option>Pulau Pinang</option><option>Sabah</option><option>Sarawak</option><option>Selangor</option>
+            <option>Terengganu</option><option>WP Kuala Lumpur</option><option>WP Labuan</option><option>WP Putrajaya</option>
+          </select>
+        </div>
+        <div class="field"><label>Kategori *</label>
+          <select id="wKategori">
+            <option value="peserta">Peserta (Hijau)</option>
+            <option value="vip">VIP (Emas)</option>
+            <option value="penceramah">Penceramah (Biru)</option>
+            <option value="urusetia">Urus Setia (Merah)</option>
+            <option value="penaja">Penaja / Pempamer (Ungu)</option>
+            <option value="media">Media (Ungu)</option>
+          </select>
+        </div>
+        <div class="field"><label>No. Telefon</label><input id="wTel" inputmode="tel"></div>
+        <div class="field"><label>E-mel</label><input id="wEmel" inputmode="email"></div>
+        <div class="field"><label>Catatan (bayaran / dokumen)</label><input id="wCatatan"></div>
+      </div>
+      <button class="btn btn-primary" onclick="daftarWalkIn()">➕ Daftar & Rekod Kehadiran</button>
+      <div id="hasilWalkIn"></div>
+    </div>
+  </section>
+
+  <!-- ============ SENARAI & STATISTIK ============ -->
+  <section id="senarai">
+    <div class="statGrid" id="statGrid"></div>
+    <div class="card" style="margin-top:16px;">
+      <div class="toolbar">
+        <button class="btn btn-ghost" onclick="document.getElementById('fileCSV').click()">📥 Import CSV</button>
+        <input type="file" id="fileCSV" accept=".csv" style="display:none" onchange="importCSV(event)">
+        <button class="btn btn-ghost" onclick="eksportCSV()">📤 Eksport CSV</button>
+        <button class="btn btn-ghost" onclick="salinPautanTiket()">🔗 Salin Pautan Tiket (untuk WhatsApp)</button>
+      </div>
+      <p style="font-size:.78rem;color:#5a6f70;margin-bottom:12px;">Format CSV: <code>nama,jawatan,organisasi,negeri,kategori,telefon,emel</code> — kod QR unik dijana automatik untuk setiap baris.</p>
+      <input id="inputTapis" placeholder="Tapis senarai…" oninput="paparSenarai()" style="margin-bottom:12px;">
+      <div style="overflow-x:auto;">
+        <table>
+          <thead><tr><th>Kod</th><th>Nama</th><th>Organisasi</th><th>Kategori</th><th>Status</th><th></th></tr></thead>
+          <tbody id="jadualBadan"></tbody>
+        </table>
+      </div>
+    </div>
+  </section>
+
+</main>
+
+<!-- ============ TAG NAMA UNTUK CETAKAN ============ -->
+<div id="badgeArea">
+  <div class="badge">
+    <div class="top">
+      <div class="conf">PKSP 2026</div>
+      <div class="confSub" id="bSub">PERSIDANGAN KEBANGSAAN · KEMENTERIAN KESIHATAN MALAYSIA</div>
+    </div>
+    <div class="mid">
+      <div class="nama" id="bNama">—</div>
+      <div class="jawatan" id="bJawatan"></div>
+      <div class="org" id="bOrg"></div>
+      <div class="negeri" id="bNegeri"></div>
+      <div class="qr" id="bQR"></div>
+      <div class="kod" id="bKod"></div>
+    </div>
+    <div class="strip" id="bStrip">PESERTA</div>
+  </div>
+</div>
+
+<div id="toast"></div>
+
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+import { initializeFirestore, collection, doc, setDoc, updateDoc, onSnapshot, serverTimestamp }
+  from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+
+/* ⚠️ GANTIKAN dengan config sebenar dari projek Firebase "qestion-conference-talk"
+   (Firebase Console → Project settings → General → Your apps → SDK setup) */
+const firebaseConfig = {
+  apiKey: "AIzaSyAGbkR3VSfD-7LzzFiQsLttdI3rvsSYku4",
+  authDomain: "qestion-conference-talk.firebaseapp.com",
+  projectId: "qestion-conference-talk",
+  storageBucket: "qestion-conference-talk.appspot.com",
+  messagingSenderId: "476595318754",
+  appId: "1:476595318754:web:fba0fcaa72bb3120cc93bb"
+};
+
+const app = initializeApp(firebaseConfig);
+/* Penting untuk rangkaian ISP Malaysia — sama seperti sistem Q&A */
+const db = initializeFirestore(app, { experimentalForceLongPolling: true });
+const KOLEKSI = "peserta_pksp2026";
+
+const KATEGORI = {
+  peserta:    { label:"PESERTA",            warna:"#1B9E4B" },
+  vip:        { label:"VIP",                warna:"#D4A017" },
+  penceramah: { label:"PENCERAMAH",         warna:"#1D6FD1" },
+  urusetia:   { label:"URUS SETIA",         warna:"#D0342C" },
+  penaja:     { label:"PENAJA / PEMPAMER",  warna:"#7A3FBF" },
+  media:      { label:"MEDIA",              warna:"#7A3FBF" }
+};
+
+let semuaPeserta = [];   // cache tempatan — tapis & susun di client (elak composite index)
+let scanner = null, sedangScan = false, kunciScan = false;
+
+/* ---------- Utiliti ---------- */
+const $ = id => document.getElementById(id);
+function toast(m){ const t=$("toast"); t.textContent=m; t.classList.add("show"); setTimeout(()=>t.classList.remove("show"),2600); }
+function timeout(ms){ return new Promise((_,rej)=>setTimeout(()=>rej(new Error("Masa tamat — semak sambungan internet")),ms)); }
+function janaKod(){
+  const c="ABCDEFGHJKLMNPQRSTUVWXYZ23456789"; let s="";
+  for(let i=0;i<6;i++) s+=c[Math.floor(Math.random()*c.length)];
+  return "PKSP26-"+s;
+}
+function escHtml(s){ return String(s??"").replace(/[&<>"]/g, m=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[m])); }
+
+/* ---------- Realtime listener (satu query mudah, tiada index) ---------- */
+onSnapshot(collection(db, KOLEKSI), snap => {
+  semuaPeserta = snap.docs.map(d => ({ id:d.id, ...d.data() }));
+  semuaPeserta.sort((a,b)=>(a.nama||"").localeCompare(b.nama||""));
+  kemaskiniStat(); paparSenarai(); cariPeserta();
+}, err => { console.error(err); toast("Gagal sambung ke pangkalan data"); });
+
+/* ---------- Tabs ---------- */
+document.querySelectorAll("nav button").forEach(b=>{
+  b.onclick=()=>{
+    document.querySelectorAll("nav button").forEach(x=>x.classList.remove("active"));
+    document.querySelectorAll("main section").forEach(x=>x.classList.remove("active"));
+    b.classList.add("active"); $(b.dataset.tab).classList.add("active");
+    if(b.dataset.tab!=="lorongA" && sedangScan) hentiScan();
+  };
+});
+
+/* ---------- LORONG A: Scan ---------- */
+$("btnMulaScan").onclick = async ()=>{
+  if(sedangScan) return;
+  scanner = new Html5Qrcode("reader");
+  try{
+    await scanner.start({ facingMode:"environment" }, { fps:10, qrbox:{width:230,height:230} },
+      teks => prosesKod(teks), ()=>{});
+    sedangScan=true; $("btnMulaScan").disabled=true; $("btnHentiScan").disabled=false;
+  }catch(e){ toast("Kamera tidak dapat diakses — benarkan kebenaran kamera"); }
+};
+$("btnHentiScan").onclick = hentiScan;
+async function hentiScan(){
+  if(scanner && sedangScan){ try{ await scanner.stop(); scanner.clear(); }catch(e){} }
+  sedangScan=false; $("btnMulaScan").disabled=false; $("btnHentiScan").disabled=true;
+}
+
+window.cariIkutKod = ()=> {
+  const k=$("inputKod").value.trim().toUpperCase();
+  if(k) prosesKod(k);
+};
+
+async function prosesKod(teks){
+  if(kunciScan) return; kunciScan=true; setTimeout(()=>kunciScan=false, 2500);
+  const kod = teks.trim().toUpperCase();
+  const p = semuaPeserta.find(x => (x.kod||"").toUpperCase() === kod);
+  const wadah = $("hasilScan");
+  if(!p){
+    wadah.innerHTML = `<div class="resultCard err"><h2>❌ Kod tidak dijumpai</h2>
+      <div class="meta">Kod <b>${escHtml(kod)}</b> tiada dalam senarai. Arahkan peserta ke <b>Lorong B</b> untuk semakan nama.</div></div>`;
+    return;
+  }
+  if(p.hadir){
+    wadah.innerHTML = kadPeserta(p, "warn", "⚠️ Sudah daftar masuk sebelum ini");
+    return;
+  }
+  await rekodHadir(p, "A");
+  wadah.innerHTML = kadPeserta({...p, hadir:true}, "ok", "✅ Kehadiran direkodkan");
+}
+
+function kadPeserta(p, kelas, tajukStatus){
+  const kat = KATEGORI[p.kategori] || KATEGORI.peserta;
+  return `<div class="resultCard ${kelas}">
+    <div style="font:600 .8rem 'Inter'; margin-bottom:6px;">${tajukStatus}</div>
+    <h2>${escHtml(p.nama)}</h2>
+    <div class="meta">${escHtml(p.jawatan||"")}${p.jawatan?"<br>":""}${escHtml(p.organisasi||"")}${p.organisasi?"<br>":""}${escHtml(p.negeri||"")}</div>
+    <span class="catChip" style="background:${kat.warna}">${kat.label}</span>
+    <div style="margin-top:14px; display:flex; gap:10px; flex-wrap:wrap;">
+      <button class="btn btn-print" onclick='cetakTag(${JSON.stringify(p.id)})'>🖨️ Cetak Tag Nama</button>
+    </div>
+  </div>`;
+}
+
+async function rekodHadir(p, lorong){
+  try{
+    await Promise.race([
+      updateDoc(doc(db, KOLEKSI, p.id), { hadir:true, lorong, masaHadir:serverTimestamp() }),
+      timeout(8000)
+    ]);
+  }catch(e){ toast(e.message); }
+}
+
+/* ---------- LORONG B: Carian ---------- */
+window.cariPeserta = ()=>{
+  const q = ($("inputCari").value||"").trim().toLowerCase();
+  const wadah = $("hasilCari");
+  if(q.length < 2){ wadah.innerHTML=""; return; }
+  const hasil = semuaPeserta.filter(p =>
+    (p.nama||"").toLowerCase().includes(q) ||
+    (p.telefon||"").toLowerCase().includes(q) ||
+    (p.emel||"").toLowerCase().includes(q)
+  ).slice(0,20);
+  if(!hasil.length){ wadah.innerHTML=`<p style="color:#5a6f70;font-size:.85rem;">Tiada padanan. Cuba ejaan lain, atau daftarkan di <b>Lorong C</b>.</p>`; return; }
+  wadah.innerHTML = hasil.map(p=>{
+    const kat = KATEGORI[p.kategori]||KATEGORI.peserta;
+    return `<div class="row">
+      <div class="grow"><b>${escHtml(p.nama)}</b><small>${escHtml(p.organisasi||"")} · ${escHtml(p.negeri||"")} · ${escHtml(p.kod||"")}</small></div>
+      <span class="catChip" style="background:${kat.warna};margin:0;">${kat.label}</span>
+      ${p.hadir ? `<span class="badgeHadir">HADIR</span>` : `<button class="btn btn-primary" onclick='daftarManual(${JSON.stringify(p.id)})'>Daftar Masuk</button>`}
+      <button class="btn btn-ghost" onclick='cetakTag(${JSON.stringify(p.id)})'>🖨️</button>
+    </div>`;
+  }).join("");
+};
+
+window.daftarManual = async id=>{
+  const p = semuaPeserta.find(x=>x.id===id); if(!p) return;
+  await rekodHadir(p, "B");
+  toast(`✅ ${p.nama} — kehadiran direkodkan`);
+};
+
+/* ---------- LORONG C: Walk-in ---------- */
+window.daftarWalkIn = async ()=>{
+  const nama = $("wNama").value.trim();
+  if(!nama){ toast("Nama diperlukan"); return; }
+  const kod = janaKod();
+  const rekod = {
+    kod, nama,
+    jawatan: $("wJawatan").value.trim(),
+    organisasi: $("wOrg").value.trim(),
+    negeri: $("wNegeri").value,
+    kategori: $("wKategori").value,
+    telefon: $("wTel").value.trim(),
+    emel: $("wEmel").value.trim(),
+    catatan: $("wCatatan").value.trim(),
+    walkIn: true, hadir: true, lorong: "C",
+    masaHadir: serverTimestamp(), dicipta: serverTimestamp()
+  };
+  try{
+    const ref = doc(collection(db, KOLEKSI));
+    await Promise.race([ setDoc(ref, rekod), timeout(8000) ]);
+    ["wNama","wJawatan","wOrg","wTel","wEmel","wCatatan"].forEach(i=>$(i).value="");
+    $("hasilWalkIn").innerHTML = kadPeserta({...rekod, id:ref.id}, "ok", "✅ Didaftarkan & kehadiran direkodkan");
+    toast("Peserta walk-in didaftarkan");
+  }catch(e){ toast(e.message); }
+};
+
+/* ---------- Cetak tag ---------- */
+window.cetakTag = id=>{
+  const p = semuaPeserta.find(x=>x.id===id) ||
+            (id && typeof id==="object" ? id : null);
+  if(!p){ toast("Rekod belum disegerakkan — cuba sekali lagi"); return; }
+  const kat = KATEGORI[p.kategori]||KATEGORI.peserta;
+  $("bNama").textContent = p.nama||"";
+  $("bJawatan").textContent = p.jawatan||"";
+  $("bOrg").textContent = p.organisasi||"";
+  $("bNegeri").textContent = p.negeri||"";
+  $("bKod").textContent = p.kod||"";
+  const strip=$("bStrip"); strip.textContent=kat.label; strip.style.background=kat.warna;
+  const q=$("bQR"); q.innerHTML="";
+  new QRCode(q, { text:p.kod||"", width:200, height:200, correctLevel:QRCode.CorrectLevel.M });
+  setTimeout(()=>window.print(), 350);
+};
+
+/* ---------- Statistik & Senarai ---------- */
+function kemaskiniStat(){
+  const total = semuaPeserta.length;
+  const hadir = semuaPeserta.filter(p=>p.hadir).length;
+  $("hdrTotal").textContent = total; $("hdrHadir").textContent = hadir;
+  const kira = {};
+  Object.keys(KATEGORI).forEach(k=>kira[k]={t:0,h:0});
+  semuaPeserta.forEach(p=>{ const k=kira[p.kategori]?p.kategori:"peserta"; kira[k].t++; if(p.hadir)kira[k].h++; });
+  $("statGrid").innerHTML =
+    `<div class="statBox"><b>${hadir} / ${total}</b><span>Kehadiran keseluruhan</span>
+       <div class="bar" style="background:linear-gradient(90deg,var(--teal-500) ${total?100*hadir/total:0}%, var(--line) 0);"></div></div>` +
+    Object.entries(KATEGORI).filter(([k])=>kira[k].t>0).map(([k,v])=>
+      `<div class="statBox"><b>${kira[k].h} / ${kira[k].t}</b><span>${v.label}</span>
+        <div class="bar" style="background:linear-gradient(90deg,${v.warna} ${kira[k].t?100*kira[k].h/kira[k].t:0}%, var(--line) 0);"></div></div>`
+    ).join("");
+}
+
+window.paparSenarai = ()=>{
+  const q = ($("inputTapis").value||"").toLowerCase();
+  const senarai = semuaPeserta.filter(p =>
+    !q || (p.nama||"").toLowerCase().includes(q) || (p.organisasi||"").toLowerCase().includes(q) || (p.kod||"").toLowerCase().includes(q)
+  );
+  $("jadualBadan").innerHTML = senarai.map(p=>{
+    const kat=KATEGORI[p.kategori]||KATEGORI.peserta;
+    return `<tr>
+      <td style="font-family:monospace;font-size:.75rem;">${escHtml(p.kod||"")}</td>
+      <td><b>${escHtml(p.nama)}</b><br><small style="color:#5a6f70">${escHtml(p.jawatan||"")}</small></td>
+      <td>${escHtml(p.organisasi||"")}<br><small style="color:#5a6f70">${escHtml(p.negeri||"")}</small></td>
+      <td><span class="catChip" style="background:${kat.warna};margin:0;">${kat.label}</span></td>
+      <td>${p.hadir?`<span class="badgeHadir">HADIR${p.lorong?" · "+p.lorong:""}</span>`:`<span class="badgeBelum">BELUM</span>`}</td>
+      <td><button class="btn btn-ghost" style="padding:6px 10px;" onclick='cetakTag(${JSON.stringify(p.id)})'>🖨️</button></td>
+    </tr>`;
+  }).join("");
+};
+
+/* ---------- Import / Eksport CSV ---------- */
+function parseCSV(teks){
+  const baris=[]; let sel="", ada=false, dalamPetik=false, semasa=[];
+  for(let i=0;i<teks.length;i++){
+    const c=teks[i];
+    if(dalamPetik){
+      if(c==='"'){ if(teks[i+1]==='"'){sel+='"';i++;} else dalamPetik=false; }
+      else sel+=c;
+    }else{
+      if(c==='"') dalamPetik=true;
+      else if(c===","){ semasa.push(sel); sel=""; }
+      else if(c==="\n"||c==="\r"){ if(sel!==""||semasa.length){semasa.push(sel); baris.push(semasa); semasa=[]; sel="";} if(c==="\r"&&teks[i+1]==="\n")i++; }
+      else sel+=c;
+    }
+  }
+  if(sel!==""||semasa.length){semasa.push(sel); baris.push(semasa);}
+  return baris;
+}
+
+window.importCSV = async ev=>{
+  const fail = ev.target.files[0]; if(!fail) return;
+  const teks = await fail.text();
+  let baris = parseCSV(teks);
+  if(baris.length && /nama/i.test(baris[0][0])) baris = baris.slice(1); // buang header
+  let ok=0, gagal=0;
+  toast(`Mengimport ${baris.length} rekod…`);
+  for(const b of baris){
+    const [nama,jawatan,organisasi,negeri,kategori,telefon,emel] = b.map(x=>(x||"").trim());
+    if(!nama){ gagal++; continue; }
+    const kat = Object.keys(KATEGORI).includes((kategori||"").toLowerCase()) ? kategori.toLowerCase() : "peserta";
+    try{
+      await Promise.race([
+        setDoc(doc(collection(db,KOLEKSI)), { kod:janaKod(), nama, jawatan, organisasi, negeri, kategori:kat, telefon, emel, hadir:false, dicipta:serverTimestamp() }),
+        timeout(10000)
+      ]); ok++;
+    }catch(e){ gagal++; }
+  }
+  toast(`Import selesai: ${ok} berjaya${gagal?`, ${gagal} gagal`:""}`);
+  ev.target.value="";
+};
+
+window.eksportCSV = ()=>{
+  const kepala="kod,nama,jawatan,organisasi,negeri,kategori,telefon,emel,hadir,lorong\n";
+  const badan = semuaPeserta.map(p=>[p.kod,p.nama,p.jawatan,p.organisasi,p.negeri,p.kategori,p.telefon,p.emel,p.hadir?"YA":"TIDAK",p.lorong||""]
+    .map(x=>`"${String(x??"").replace(/"/g,'""')}"`).join(",")).join("\n");
+  const blob=new Blob([kepala+badan],{type:"text/csv"});
+  const a=document.createElement("a"); a.href=URL.createObjectURL(blob); a.download="peserta_pksp2026.csv"; a.click();
+};
+
+window.salinPautanTiket = ()=>{
+  const url = location.href.replace(/index\.html.*$|\/$/,"/") + "tiket.html?kod=KOD_PESERTA";
+  navigator.clipboard.writeText(url).then(()=>toast("Pautan disalin — gantikan KOD_PESERTA dengan kod sebenar"));
+};
+</script>
+</body>
+</html>
