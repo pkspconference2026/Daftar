@@ -250,12 +250,12 @@ import { initializeFirestore, collection, doc, setDoc, updateDoc, onSnapshot, se
 /* ⚠️ GANTIKAN dengan config sebenar dari projek Firebase "qestion-conference-talk"
    (Firebase Console → Project settings → General → Your apps → SDK setup) */
 const firebaseConfig = {
-  apiKey: "AIzaSyAGbkR3VSfD-7LzzFiQsLttdI3rvsSYku4",
+  apiKey: "GANTIKAN_API_KEY",
   authDomain: "qestion-conference-talk.firebaseapp.com",
   projectId: "qestion-conference-talk",
   storageBucket: "qestion-conference-talk.appspot.com",
-  messagingSenderId: "476595318754",
-  appId: "1:476595318754:web:fba0fcaa72bb3120cc93bb"
+  messagingSenderId: "GANTIKAN",
+  appId: "GANTIKAN"
 };
 
 const app = initializeApp(firebaseConfig);
@@ -465,7 +465,11 @@ window.paparSenarai = ()=>{
       <td>${escHtml(p.organisasi||"")}<br><small style="color:#5a6f70">${escHtml(p.negeri||"")}</small></td>
       <td><span class="catChip" style="background:${kat.warna};margin:0;">${kat.label}</span></td>
       <td>${p.hadir?`<span class="badgeHadir">HADIR${p.lorong?" · "+p.lorong:""}</span>`:`<span class="badgeBelum">BELUM</span>`}</td>
-      <td><button class="btn btn-ghost" style="padding:6px 10px;" onclick='cetakTag(${JSON.stringify(p.id)})'>🖨️</button></td>
+      <td style="white-space:nowrap;">
+        <button class="btn btn-ghost" style="padding:6px 10px;" title="Cetak tag" onclick='cetakTag(${JSON.stringify(p.id)})'>🖨️</button>
+        <button class="btn btn-ghost" style="padding:6px 10px;" title="Hantar tiket melalui WhatsApp" onclick='hantarWhatsApp(${JSON.stringify(p.id)})'>📱</button>
+        <button class="btn btn-ghost" style="padding:6px 10px;" title="Salin pautan tiket" onclick='salinTiket(${JSON.stringify(p.id)})'>🔗</button>
+      </td>
     </tr>`;
   }).join("");
 };
@@ -512,16 +516,56 @@ window.importCSV = async ev=>{
 };
 
 window.eksportCSV = ()=>{
-  const kepala="kod,nama,jawatan,organisasi,negeri,kategori,telefon,emel,hadir,lorong\n";
-  const badan = semuaPeserta.map(p=>[p.kod,p.nama,p.jawatan,p.organisasi,p.negeri,p.kategori,p.telefon,p.emel,p.hadir?"YA":"TIDAK",p.lorong||""]
+  const kepala="kod,nama,jawatan,organisasi,negeri,kategori,telefon,emel,hadir,lorong,pautan_tiket\n";
+  const badan = semuaPeserta.map(p=>[p.kod,p.nama,p.jawatan,p.organisasi,p.negeri,p.kategori,p.telefon,p.emel,p.hadir?"YA":"TIDAK",p.lorong||"",urlTiket(p.kod)]
     .map(x=>`"${String(x??"").replace(/"/g,'""')}"`).join(",")).join("\n");
   const blob=new Blob([kepala+badan],{type:"text/csv"});
   const a=document.createElement("a"); a.href=URL.createObjectURL(blob); a.download="peserta_pksp2026.csv"; a.click();
 };
 
+/* ---------- Pautan tiket & WhatsApp ---------- */
+function urlTiket(kod){
+  // Asas URL dari lokasi semasa: buang index.html jika ada
+  const asas = location.origin + location.pathname.replace(/index\.html$/,"");
+  return asas + "tiket.html?kod=" + encodeURIComponent(kod);
+}
+
+function telWa(telefon){
+  // Format ke nombor antarabangsa Malaysia untuk wa.me: 0123456789 → 60123456789
+  let t = String(telefon||"").replace(/\D/g,"");
+  if(t.startsWith("0")) t = "6" + t;        // 012… → 6012…
+  else if(t.startsWith("1")) t = "60" + t;  // 12…  → 6012…
+  return t;
+}
+
+window.hantarWhatsApp = id=>{
+  const p = semuaPeserta.find(x=>x.id===id); if(!p) return;
+  if(!p.telefon){ toast("Peserta ini tiada nombor telefon dalam rekod"); return; }
+  const mesej =
+`Salam sejahtera ${p.nama},
+
+Pendaftaran anda untuk *PKSP 2026* telah disahkan. ✅
+
+Tiket QR anda:
+${urlTiket(p.kod)}
+
+Sila buka pautan di atas, *screenshot QR code* tersebut dan simpan dalam telefon anda.
+
+Pada hari persidangan, tuju ke *Lorong A — QR Express* dan tunjukkan QR untuk daftar masuk pantas. Kaunter dibuka jam 7:30 pagi.
+
+Terima kasih.
+— Urus Setia PKSP 2026`;
+  window.open(`https://wa.me/${telWa(p.telefon)}?text=${encodeURIComponent(mesej)}`, "_blank");
+};
+
+window.salinTiket = id=>{
+  const p = semuaPeserta.find(x=>x.id===id); if(!p) return;
+  navigator.clipboard.writeText(urlTiket(p.kod)).then(()=>toast(`Pautan tiket ${p.nama} disalin`));
+};
+
 window.salinPautanTiket = ()=>{
-  const url = location.href.replace(/index\.html.*$|\/$/,"/") + "tiket.html?kod=KOD_PESERTA";
-  navigator.clipboard.writeText(url).then(()=>toast("Pautan disalin — gantikan KOD_PESERTA dengan kod sebenar"));
+  navigator.clipboard.writeText(urlTiket("KOD_PESERTA"))
+    .then(()=>toast("Pautan disalin — gantikan KOD_PESERTA dengan kod sebenar"));
 };
 </script>
 </body>
