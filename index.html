@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>PKSP 2026 — Kaunter Pendaftaran</title>
+<title>PERSIDANGAN PKSP 2026 — Kaunter Pendaftaran</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html5-qrcode/2.3.8/html5-qrcode.min.js"></script>
@@ -21,7 +21,8 @@
 
   /* ===== Header ===== */
   header{background:var(--teal-900); color:#fff; padding:14px 20px; display:flex; align-items:center; gap:14px; flex-wrap:wrap;}
-  header .logo{width:40px;height:40px;border-radius:10px;background:var(--teal-500);display:flex;align-items:center;justify-content:center;font-family:'Space Grotesk';font-weight:700;font-size:15px;}
+  header .logo{width:46px;height:46px;display:flex;align-items:center;justify-content:center;flex-shrink:0;}
+  header .logo img{width:100%;height:100%;object-fit:contain;}
   header h1{font-size:1.05rem; letter-spacing:.02em;}
   header .sub{font-size:.75rem; opacity:.75;}
   #statHeader{margin-left:auto; display:flex; gap:18px; font-size:.8rem;}
@@ -113,9 +114,9 @@
 <body>
 
 <header>
-  <div class="logo">PK</div>
+  <div class="logo"><img src="Logo_TKPM.png" alt="Logo TKPM"></div>
   <div>
-    <h1>PKSP 2026 · Kaunter Pendaftaran</h1>
+    <h1>PERSIDANGAN PKSP 2026 · Kaunter Pendaftaran</h1>
     <div class="sub">Scan · Print · Collect</div>
   </div>
   <div id="statHeader">
@@ -225,7 +226,7 @@
 <div id="badgeArea">
   <div class="badge">
     <div class="top">
-      <div class="conf">PKSP 2026</div>
+      <div class="conf">PERSIDANGAN PKSP 2026</div>
       <div class="confSub" id="bSub">PERSIDANGAN KEBANGSAAN · KEMENTERIAN KESIHATAN MALAYSIA</div>
     </div>
     <div class="mid">
@@ -544,7 +545,7 @@ window.hantarWhatsApp = id=>{
   const mesej =
 `Salam sejahtera ${p.nama},
 
-Pendaftaran anda untuk *PKSP 2026* telah disahkan. ✅
+Pendaftaran anda untuk *PERSIDANGAN PKSP 2026* telah disahkan. ✅
 
 Tiket QR anda:
 ${urlTiket(p.kod)}
@@ -554,7 +555,7 @@ Sila buka pautan di atas, *screenshot QR code* tersebut dan simpan dalam telefon
 Pada hari persidangan, tuju ke *Lorong A — QR Express* dan tunjukkan QR untuk daftar masuk pantas. Kaunter dibuka jam 7:30 pagi.
 
 Terima kasih.
-— Urus Setia PKSP 2026`;
+— Urus Setia PERSIDANGAN PKSP 2026`;
   window.open(`https://wa.me/${telWa(p.telefon)}?text=${encodeURIComponent(mesej)}`, "_blank");
 };
 
