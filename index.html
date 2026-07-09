@@ -8,6 +8,7 @@
 <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html5-qrcode/2.3.8/html5-qrcode.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <style>
   :root{
     --teal-900:#0B3B3C; --teal-700:#11605F; --teal-500:#178582;
@@ -21,7 +22,8 @@
 
   /* ===== Header ===== */
   header{background:var(--teal-900); color:#fff; padding:14px 20px; display:flex; align-items:center; gap:14px; flex-wrap:wrap;}
-  header .logo{width:40px;height:40px;border-radius:10px;background:var(--teal-500);display:flex;align-items:center;justify-content:center;font-family:'Space Grotesk';font-weight:700;font-size:15px;}
+  header .logo{width:46px;height:46px;display:flex;align-items:center;justify-content:center;flex-shrink:0;}
+  header .logo img{width:100%;height:100%;object-fit:contain;}
   header h1{font-size:1.05rem; letter-spacing:.02em;}
   header .sub{font-size:.75rem; opacity:.75;}
   #statHeader{margin-left:auto; display:flex; gap:18px; font-size:.8rem;}
@@ -113,7 +115,7 @@
 <body>
 
 <header>
-  <div class="logo">PK</div>
+  <div class="logo"><img src="Logo_TKPM.png" alt="Logo TKPM"></div>
   <div>
     <h1>PKSP 2026 · Kaunter Pendaftaran</h1>
     <div class="sub">Scan · Print · Collect</div>
@@ -206,6 +208,7 @@
         <button class="btn btn-ghost" onclick="document.getElementById('fileCSV').click()">📥 Import CSV</button>
         <input type="file" id="fileCSV" accept=".csv" style="display:none" onchange="importCSV(event)">
         <button class="btn btn-ghost" onclick="eksportCSV()">📤 Eksport CSV</button>
+        <button class="btn btn-primary" onclick="eksportExcel()">📊 Muat Turun Excel</button>
         <button class="btn btn-ghost" onclick="salinPautanTiket()">🔗 Salin Pautan Tiket (untuk WhatsApp)</button>
       </div>
       <p style="font-size:.78rem;color:#5a6f70;margin-bottom:12px;">Format CSV: <code>nama,jawatan,organisasi,negeri,kategori,telefon,emel</code> — kod QR unik dijana automatik untuk setiap baris.</p>
@@ -521,6 +524,30 @@ window.eksportCSV = ()=>{
     .map(x=>`"${String(x??"").replace(/"/g,'""')}"`).join(",")).join("\n");
   const blob=new Blob([kepala+badan],{type:"text/csv"});
   const a=document.createElement("a"); a.href=URL.createObjectURL(blob); a.download="peserta_pksp2026.csv"; a.click();
+};
+
+window.eksportExcel = ()=>{
+  if(!semuaPeserta.length){ toast("Tiada rekod peserta lagi"); return; }
+  const data = semuaPeserta.map(p=>({
+    "Kod": p.kod||"",
+    "Nama": p.nama||"",
+    "Jawatan": p.jawatan||"",
+    "Organisasi": p.organisasi||"",
+    "Negeri": p.negeri||"",
+    "Kategori": (KATEGORI[p.kategori]||KATEGORI.peserta).label,
+    "Telefon": p.telefon||"",
+    "Emel": p.emel||"",
+    "Hadir": p.hadir ? "YA" : "TIDAK",
+    "Lorong": p.lorong||"",
+    "Pautan Tiket": urlTiket(p.kod)
+  }));
+  const ws = XLSX.utils.json_to_sheet(data);
+  ws['!cols'] = [{wch:14},{wch:28},{wch:26},{wch:30},{wch:16},{wch:14},{wch:14},{wch:26},{wch:8},{wch:8},{wch:46}];
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, "Peserta PKSP2026");
+  const tarikh = new Date().toISOString().slice(0,10);
+  XLSX.writeFile(wb, `Senarai_Peserta_PKSP2026_${tarikh}.xlsx`);
+  toast("Fail Excel dimuat turun");
 };
 
 /* ---------- Pautan tiket & WhatsApp ---------- */
