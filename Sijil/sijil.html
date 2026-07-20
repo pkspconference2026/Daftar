@@ -1,0 +1,458 @@
+<!DOCTYPE html>
+<html lang="ms">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Sijil Penyertaan — PKSP 2026</title>
+
+<!-- Fonts -->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@500;600;700&display=swap" rel="stylesheet">
+
+<style>
+  :root{
+    --hijau:#1f7a3d;
+    --teks:#1a1a1a;
+    --lembut:#5b6b60;
+    --bg:#eef2ee;
+    --kad:#ffffff;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{
+    font-family:Arial, Helvetica, sans-serif;
+    background:var(--bg);
+    color:var(--teks);
+    min-height:100vh;
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    padding:24px 12px 60px;
+  }
+
+  /* ---- Panel atas (kawalan) ---- */
+  .panel{width:100%;max-width:820px;text-align:center;margin-bottom:20px}
+  .panel h1{font-family:'Playfair Display',serif;font-size:26px;color:var(--hijau);margin-bottom:4px}
+  .panel p{color:var(--lembut);font-size:14px}
+
+  .kotak{
+    background:var(--kad);border-radius:16px;padding:22px;
+    box-shadow:0 8px 30px rgba(0,0,0,.08);max-width:820px;width:100%;
+    margin-bottom:22px;
+  }
+  .cari{display:flex;gap:8px;flex-wrap:wrap;justify-content:center}
+  .cari input{
+    flex:1;min-width:220px;padding:12px 14px;border:1.5px solid #d5ddd6;border-radius:10px;font-size:15px;
+  }
+  .cari input:focus{outline:none;border-color:var(--hijau)}
+  .senarai{margin-top:12px;text-align:left}
+  .senarai button{
+    display:block;width:100%;text-align:left;padding:12px 14px;border:1px solid #e3e9e4;
+    background:#f7faf7;border-radius:10px;margin-bottom:8px;cursor:pointer;font-size:15px;
+  }
+  .senarai button:hover{border-color:var(--hijau);background:#eef6ef}
+
+  .status{
+    max-width:820px;width:100%;text-align:center;padding:26px;border-radius:14px;
+    background:var(--kad);box-shadow:0 8px 30px rgba(0,0,0,.06);margin-bottom:22px;
+  }
+  .status .ikon{font-size:40px;margin-bottom:8px}
+  .status h2{font-size:19px;margin-bottom:6px}
+  .status p{color:var(--lembut);font-size:14.5px;line-height:1.5}
+  .amaran{background:#fff4f4;border:1px solid #f3c9c9;color:#9b2c2c}
+
+  /* ---- Butang ---- */
+  .butang-baris{display:flex;gap:10px;flex-wrap:wrap;justify-content:center;margin-bottom:26px}
+  .btn{
+    border:none;border-radius:12px;padding:14px 22px;font-size:15px;font-weight:700;
+    cursor:pointer;display:inline-flex;align-items:center;gap:8px;transition:.15s;
+  }
+  .btn-utama{background:var(--hijau);color:#fff}
+  .btn-utama:hover{background:#186231}
+  .btn-wa{background:#25d366;color:#fff}
+  .btn-wa:hover{background:#1eb658}
+  .btn:disabled{opacity:.5;cursor:not-allowed}
+
+  /* ---- Pratonton sijil (skala) ---- */
+  .pratonton{width:100%;max-width:820px;display:flex;justify-content:center;overflow:hidden}
+  .skala{transform-origin:top center}
+
+  /* =========================================================
+     SIJIL — saiz tetap A4 potret (794 x 1123 px @ 96dpi)
+     ========================================================= */
+  #sijil{
+    width:794px;height:1123px;background:#fff;position:relative;
+    padding:70px 78px;display:flex;flex-direction:column;align-items:center;
+    color:#111;
+  }
+
+  .logo-baris{display:flex;justify-content:center;align-items:flex-start;gap:46px;margin-bottom:6px}
+  .logo-item{display:flex;flex-direction:column;align-items:center;width:150px}
+  .logo-item img{height:78px;width:auto;object-fit:contain}
+  .logo-ph{height:78px;width:78px;border:1.5px dashed #c7c7c7;border-radius:8px;
+    display:flex;align-items:center;justify-content:center;font-size:9px;color:#aaa;text-align:center;padding:4px}
+  .logo-item span{font-size:8px;font-weight:700;color:#222;text-align:center;margin-top:6px;line-height:1.25;text-transform:uppercase;letter-spacing:.2px}
+
+  .tajuk{font-family:'Playfair Display',serif;font-size:62px;font-weight:600;letter-spacing:1px;margin-top:60px;margin-bottom:26px;text-align:center}
+  .disahkan{font-family:Georgia,'Times New Roman',serif;font-weight:700;font-size:20px;letter-spacing:.5px;margin-bottom:34px}
+
+  .nama{font-family:'Playfair Display',serif;font-weight:600;font-size:40px;color:var(--hijau);
+    text-align:center;line-height:1.15;min-height:52px;padding:0 10px;margin-bottom:34px}
+
+  .jayanya{font-family:Georgia,'Times New Roman',serif;font-weight:700;font-size:20px;letter-spacing:.5px;margin-bottom:22px}
+  .acara{font-weight:700;font-size:21px;text-align:center;line-height:1.35;margin-bottom:26px;text-transform:uppercase}
+  .pada{font-size:17px;margin-bottom:2px}
+  .tarikh{font-weight:700;font-size:19px;margin-bottom:22px}
+  .bertempat{font-size:17px;margin-bottom:2px}
+  .lokasi{font-weight:700;font-size:19px}
+
+  .ttd-blok{margin-top:auto;display:flex;flex-direction:column;align-items:center;width:100%}
+  .ttd-imej{height:70px;margin-bottom:-6px}
+  .ttd-ph{height:70px}
+  .garis{font-size:20px;letter-spacing:2px;color:#333;margin-bottom:4px}
+  .penandatangan{font-weight:700;font-size:19px}
+  .jawatan{font-size:16px;line-height:1.45}
+
+  .nota{position:absolute;right:78px;bottom:46px;font-family:Georgia,serif;font-size:15px;color:#222}
+
+  .sembunyi{display:none!important}
+
+  @media (max-width:520px){
+    .panel h1{font-size:22px}
+    .btn{padding:13px 18px;font-size:14px}
+  }
+</style>
+</head>
+<body>
+
+  <div class="panel">
+    <h1>Sijil Penyertaan</h1>
+    <p>Persidangan Pegawai Kerja Sosial Perubatan Malaysia Ke-29</p>
+  </div>
+
+  <!-- Carian (papar bila tiada ?id= dalam pautan) -->
+  <div class="kotak" id="kotakCari">
+    <div class="cari">
+      <input id="inputCari" type="text" placeholder="Taip nama atau no. telefon anda…">
+      <button class="btn btn-utama" onclick="cariPeserta()">Cari</button>
+    </div>
+    <div class="senarai" id="hasilCari"></div>
+  </div>
+
+  <!-- Status / mesej -->
+  <div class="status sembunyi" id="kotakStatus">
+    <div class="ikon" id="statusIkon">⏳</div>
+    <h2 id="statusTajuk">Sedang memuatkan…</h2>
+    <p id="statusMesej">Sila tunggu sebentar.</p>
+  </div>
+
+  <!-- Butang tindakan -->
+  <div class="butang-baris sembunyi" id="butangBaris">
+    <button class="btn btn-utama" id="btnMuatTurun" onclick="muatTurunPDF()">⬇️ Muat Turun Sijil (PDF)</button>
+    <button class="btn btn-wa" id="btnWA" onclick="kongsiWA()">💬 Kongsi WhatsApp</button>
+  </div>
+
+  <!-- Pratonton sijil -->
+  <div class="pratonton sembunyi" id="pratonton">
+    <div class="skala" id="skala">
+
+      <!-- ====== SIJIL ====== -->
+      <div id="sijil">
+        <div class="logo-baris">
+          <div class="logo-item">
+            <img src="logo_ppmpm.png" alt="" onerror="this.outerHTML='&lt;div class=\'logo-ph\'&gt;LOGO PPMPM&lt;/div&gt;'">
+            <span>Persatuan Pegawai Pembangunan Masyarakat (Perubatan) Malaysia</span>
+          </div>
+          <div class="logo-item">
+            <img src="logo_kkm.png" alt="" onerror="this.outerHTML='&lt;div class=\'logo-ph\'&gt;JATA KKM&lt;/div&gt;'">
+            <span>Kementerian Kesihatan Malaysia</span>
+          </div>
+          <div class="logo-item">
+            <img src="logo_kpt.png" alt="" onerror="this.outerHTML='&lt;div class=\'logo-ph\'&gt;JATA KPT&lt;/div&gt;'">
+            <span>Kementerian Pendidikan Tinggi</span>
+          </div>
+        </div>
+
+        <div class="tajuk">SIJIL PENYERTAAN</div>
+        <div class="disahkan">DENGAN INI DISAHKAN BAHAWA</div>
+
+        <div class="nama" id="namaPeserta">&nbsp;</div>
+
+        <div class="jayanya">TELAH HADIR DENGAN JAYANYA</div>
+        <div class="acara" id="acaraTajuk">Persidangan Pegawai Kerja Sosial Perubatan Malaysia Ke-29</div>
+        <div class="pada">pada</div>
+        <div class="tarikh" id="acaraTarikh">2 HINGGA 4 OGOS 2026</div>
+        <div class="bertempat">bertempat di</div>
+        <div class="lokasi" id="acaraLokasi">Hotel Perdana, Kota Bharu, Kelantan.</div>
+
+        <div class="ttd-blok">
+          <img class="ttd-imej" src="tandatangan_bos.png" alt="" onerror="this.outerHTML='&lt;div class=\'ttd-ph\'&gt;&lt;/div&gt;'">
+          <div class="garis">..............................</div>
+          <div class="penandatangan" id="ttdNama">ZULHAN BIN AMBI</div>
+          <div class="jawatan" id="ttdJawatan1">Ketua Profesion Pegawai Kerja Sosial Perubatan</div>
+          <div class="jawatan" id="ttdJawatan2">Kementerian Kesihatan Malaysia</div>
+        </div>
+
+        <div class="nota" id="notaKaki">Latihan HRMIS : 24 Jam</div>
+      </div>
+      <!-- ====== TAMAT SIJIL ====== -->
+
+    </div>
+  </div>
+
+<!-- Perpustakaan PDF -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+import { initializeFirestore, doc, getDoc, collection, getDocs, query, where, limit }
+  from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+
+/* =====================================================================
+   ⚙️  TETAPAN — sila semak / ubah ikut projek Hafiz
+   ===================================================================== */
+const FIREBASE_CONFIG = {
+  apiKey: "MASUKKAN_APIKEY",
+  authDomain: "qestion-conference-talk.firebaseapp.com",
+  projectId: "qestion-conference-talk",
+  storageBucket: "qestion-conference-talk.appspot.com",
+  messagingSenderId: "MASUKKAN_SENDER_ID",
+  appId: "MASUKKAN_APP_ID"
+};
+
+const TETAPAN = {
+  koleksiPeserta : "peserta_pksp2026", // nama koleksi peserta di Firestore
+  medanNama      : "nama",             // medan nama penuh peserta
+  medanHadir     : "hadir",            // medan status kehadiran (boolean)
+  medanTelefon   : "telefon",          // medan no. telefon (untuk carian)
+  medanKod       : "kod",              // medan kod tiket (cth PKSP26-7KV822)
+  medanOrganisasi: "organisasi",       // untuk bezakan nama yg serupa
+  medanNegeri    : "negeri",
+  paramId        : "id"                // parameter URL id — samakan dgn tiket.html
+};
+
+// Butiran acara (kekal pada sijil)
+const ACARA = {
+  tajuk : "Persidangan Pegawai Kerja Sosial Perubatan Malaysia Ke-29",
+  tarikh: "2 HINGGA 4 OGOS 2026",
+  lokasi: "Hotel Perdana, Kota Bharu, Kelantan.",
+  ttdNama: "ZULHAN BIN AMBI",
+  jawatan1: "Ketua Profesion Pegawai Kerja Sosial Perubatan",
+  jawatan2: "Kementerian Kesihatan Malaysia",
+  nota: "Latihan HRMIS : 24 Jam"
+};
+/* ===================================================================== */
+
+// Pasang butiran acara ke sijil
+document.getElementById('acaraTajuk').textContent   = ACARA.tajuk;
+document.getElementById('acaraTarikh').textContent  = ACARA.tarikh;
+document.getElementById('acaraLokasi').textContent  = ACARA.lokasi;
+document.getElementById('ttdNama').textContent      = ACARA.ttdNama;
+document.getElementById('ttdJawatan1').textContent  = ACARA.jawatan1;
+document.getElementById('ttdJawatan2').textContent  = ACARA.jawatan2;
+document.getElementById('notaKaki').textContent     = ACARA.nota;
+
+// --- Rujukan elemen ---
+const $ = id => document.getElementById(id);
+const kotakCari = $('kotakCari'), kotakStatus = $('kotakStatus');
+const butangBaris = $('butangBaris'), pratonton = $('pratonton');
+let namaSemasa = "", idSemasa = "";
+
+// --- Skala pratonton ikut lebar skrin ---
+function skalaPratonton(){
+  const lebar = Math.min(pratonton.clientWidth, 820);
+  const skala = Math.min(1, lebar / 794);
+  const s = $('skala');
+  s.style.transform = `scale(${skala})`;
+  s.style.height = (1123 * skala) + 'px';
+}
+window.addEventListener('resize', skalaPratonton);
+
+// --- Papar status ---
+function paparStatus(ikon, tajuk, mesej, amaran=false){
+  kotakStatus.classList.remove('sembunyi');
+  kotakStatus.classList.toggle('amaran', amaran);
+  $('statusIkon').textContent = ikon;
+  $('statusTajuk').textContent = tajuk;
+  $('statusMesej').textContent = mesej;
+}
+function sembunyiStatus(){ kotakStatus.classList.add('sembunyi'); }
+
+// --- Helper baca medan (fleksibel jika nama medan sedikit berbeza) ---
+const ambilNama = d => d[TETAPAN.medanNama] || d.nama || d.name || d.namaPenuh || d.fullName || "";
+function sudahHadir(d){
+  const v = d[TETAPAN.medanHadir];
+  if (typeof v === 'boolean') return v;
+  return v === true || v === 'hadir' || v === 'Hadir' || d.status === 'hadir' || d.status === 'Hadir';
+}
+
+// --- Papar sijil untuk seorang peserta ---
+function paparSijil(nama){
+  namaSemasa = nama;
+  $('namaPeserta').textContent = nama;
+  kotakCari.classList.add('sembunyi');
+  sembunyiStatus();
+  butangBaris.classList.remove('sembunyi');
+  pratonton.classList.remove('sembunyi');
+  requestAnimationFrame(skalaPratonton);
+}
+
+/* =========================
+   MOD CONTOH (tanpa Firebase)
+   guna: ?nama=Nama Penuh  atau  ?contoh=1
+   ========================= */
+const url = new URLSearchParams(location.search);
+const paramNama = url.get('nama');
+const idPeserta = url.get(TETAPAN.paramId);
+const kodPeserta = url.get('kod');
+
+if (paramNama || url.get('contoh')){
+  paparSijil(paramNama || "AHMAD BIN ABDULLAH");
+} else {
+  mulakanFirebase();
+}
+
+// --- Firebase ---
+let db = null;
+function konfigOK(){
+  return !Object.values(FIREBASE_CONFIG).some(v => String(v).startsWith('MASUKKAN'));
+}
+async function mulakanFirebase(){
+  if (!konfigOK()){
+    kotakCari.classList.add('sembunyi');
+    paparStatus('⚠️','Firebase belum dikonfigurasi',
+      'Sila masukkan kredensi Firebase sebenar dalam FIREBASE_CONFIG. Untuk lihat rupa sijil, buka pautan dengan ?contoh=1', true);
+    return;
+  }
+  try{
+    const app = initializeApp(FIREBASE_CONFIG);
+    // WAJIB kekal untuk ISP Malaysia
+    db = initializeFirestore(app, { experimentalForceLongPolling: true });
+  }catch(e){
+    paparStatus('⚠️','Ralat sambungan', e.message, true);
+    return;
+  }
+
+  if (kodPeserta){
+    muatIkutKod(kodPeserta);
+  }else if (idPeserta){
+    muatIkutId(idPeserta);
+  }else{
+    // tiada id/kod → papar carian
+    kotakCari.classList.remove('sembunyi');
+  }
+}
+
+// Sahkan & papar satu rekod
+function proses(d, idDok){
+  idSemasa = idDok;
+  if (!sudahHadir(d)){
+    paparStatus('🪪','Belum Check-In',
+      'Sijil hanya tersedia selepas anda check-in di kaunter pendaftaran. Jumpa kami di sana!', true);
+    return;
+  }
+  paparSijil(ambilNama(d).toUpperCase());
+}
+
+// Cari ikut kod tiket (medan 'kod')
+async function muatIkutKod(kod){
+  paparStatus('⏳','Sedang menyemak…','Mengesahkan kehadiran anda.');
+  try{
+    const q = query(collection(db, TETAPAN.koleksiPeserta), where(TETAPAN.medanKod,'==',kod), limit(1));
+    const ss = await getDocs(q);
+    if (ss.empty){ tidakDijumpai(); return; }
+    proses(ss.docs[0].data(), ss.docs[0].id);
+  }catch(e){ paparStatus('⚠️','Ralat',e.message,true); }
+}
+
+function tidakDijumpai(){
+  paparStatus('🔍','Peserta tidak dijumpai',
+    'Rekod tidak wujud. Sila guna pautan dari tiket anda atau cari nama di bawah.', true);
+  kotakCari.classList.remove('sembunyi');
+}
+
+// Cari ikut id: cuba document ID dulu, kalau gagal cuba sebagai kod
+async function muatIkutId(id){
+  paparStatus('⏳','Sedang menyemak…','Mengesahkan kehadiran anda.');
+  try{
+    const snap = await getDoc(doc(db, TETAPAN.koleksiPeserta, id));
+    if (snap.exists()){ proses(snap.data(), snap.id); return; }
+    // fallback: mungkin 'id' sebenarnya kod tiket
+    const q = query(collection(db, TETAPAN.koleksiPeserta), where(TETAPAN.medanKod,'==',id), limit(1));
+    const ss = await getDocs(q);
+    if (!ss.empty){ proses(ss.docs[0].data(), ss.docs[0].id); return; }
+    tidakDijumpai();
+  }catch(e){
+    paparStatus('⚠️','Ralat',e.message,true);
+  }
+}
+
+// --- Carian ikut nama / telefon (tapis di sisi klien, elak indeks komposit) ---
+let cacheSemua = null;
+window.cariPeserta = async function(){
+  const q = $('inputCari').value.trim().toLowerCase();
+  if (q.length < 2){ alert('Sila taip sekurang-kurangnya 2 aksara.'); return; }
+  const hasil = $('hasilCari');
+  hasil.innerHTML = '<p style="color:#5b6b60;padding:8px">Mencari…</p>';
+  try{
+    if (!cacheSemua){
+      const ss = await getDocs(collection(db, TETAPAN.koleksiPeserta));
+      cacheSemua = ss.docs.map(x => ({ id:x.id, ...x.data() }));
+    }
+    const padanan = cacheSemua.filter(d=>{
+      const nama = String(ambilNama(d)).toLowerCase();
+      const tel  = String(d[TETAPAN.medanTelefon]||'').toLowerCase();
+      const kod  = String(d[TETAPAN.medanKod]||'').toLowerCase();
+      return nama.includes(q) || tel.includes(q) || kod.includes(q);
+    }).slice(0,15);
+
+    if (!padanan.length){ hasil.innerHTML = '<p style="color:#9b2c2c;padding:8px">Tiada padanan dijumpai.</p>'; return; }
+
+    hasil.innerHTML = '';
+    padanan.forEach(d=>{
+      const b = document.createElement('button');
+      const hadir = sudahHadir(d);
+      const sub = [d[TETAPAN.medanOrganisasi], d[TETAPAN.medanNegeri]].filter(Boolean).join(' · ');
+      b.innerHTML = `<b>${ambilNama(d)}</b>${hadir?'':' <span style="color:#9b2c2c;font-size:12px">(belum check-in)</span>'}`
+        + (sub?`<br><span style="color:#5b6b60;font-size:12.5px">${sub}</span>`:'');
+      b.onclick = ()=>{
+        if (!hadir){
+          paparStatus('🪪','Belum Check-In','Sijil hanya tersedia selepas check-in di kaunter.', true);
+          return;
+        }
+        idSemasa = d.id;
+        paparSijil(ambilNama(d).toUpperCase());
+      };
+      hasil.appendChild(b);
+    });
+  }catch(e){ hasil.innerHTML = `<p style="color:#9b2c2c;padding:8px">Ralat: ${e.message}</p>`; }
+};
+$('inputCari')?.addEventListener('keydown', e=>{ if(e.key==='Enter') window.cariPeserta(); });
+
+// --- Muat turun PDF (A4 potret) ---
+window.muatTurunPDF = async function(){
+  const btn = $('btnMuatTurun');
+  btn.disabled = true; btn.textContent = '⏳ Menyediakan…';
+  try{
+    await document.fonts.ready;
+    const kanvas = await html2canvas($('sijil'), { scale:3, useCORS:true, backgroundColor:'#ffffff' });
+    const imej = kanvas.toDataURL('image/png');
+    const { jsPDF } = window.jspdf;
+    const pdf = new jsPDF({ orientation:'portrait', unit:'mm', format:'a4' });
+    pdf.addImage(imej, 'PNG', 0, 0, 210, 297);
+    const fail = 'Sijil_PKSP2026_' + namaSemasa.replace(/[^\w]+/g,'_') + '.pdf';
+    pdf.save(fail);
+  }catch(e){ alert('Gagal menjana PDF: ' + e.message); }
+  finally{ btn.disabled=false; btn.textContent='⬇️ Muat Turun Sijil (PDF)'; }
+};
+
+// --- Kongsi WhatsApp ---
+window.kongsiWA = function(){
+  const pautan = location.origin + location.pathname + (idSemasa ? ('?'+TETAPAN.paramId+'='+idSemasa) : '');
+  const teks = `Sijil Penyertaan PKSP Ke-29 saya 🎓\n${pautan}`;
+  window.open('https://wa.me/?text=' + encodeURIComponent(teks), '_blank');
+};
+</script>
+</body>
+</html>
