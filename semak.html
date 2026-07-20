@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html lang="ms">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Semak Tiket Saya — PKSP 2026</title>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+<style>
+  :root{ --teal-900:#0B3B3C; --teal-700:#11605F; --teal-500:#178582; --mist:#F2F6F5; --ink:#13292A; --line:#D7E2E0; }
+  *{box-sizing:border-box;margin:0;padding:0;}
+  body{font-family:'Inter',sans-serif; background:var(--teal-900); min-height:100vh; padding:20px; display:flex; align-items:flex-start; justify-content:center;}
+  .wrap{width:100%; max-width:420px;}
+  .kepala{text-align:center; color:#fff; margin:14px 0 22px;}
+  .kepala h1{font-family:'Space Grotesk'; font-size:1.6rem; letter-spacing:.03em;}
+  .kepala p{font-size:.8rem; opacity:.8; margin-top:6px; letter-spacing:.06em; text-transform:uppercase;}
+  .kad{background:#fff; border-radius:18px; padding:24px; box-shadow:0 16px 44px rgba(0,0,0,.28);}
+  label{font:600 .8rem 'Inter'; display:block; margin-bottom:8px; color:#3c5253;}
+  .cariRow{display:flex; gap:8px;}
+  input{flex:1; font:400 1rem 'Inter'; padding:13px 14px; border:1.5px solid var(--line); border-radius:11px; background:#fff; width:100%;}
+  input:focus{outline:2px solid var(--teal-500); border-color:var(--teal-500);}
+  button{border:none; border-radius:11px; padding:13px 18px; font:600 .95rem 'Inter'; cursor:pointer; background:var(--teal-700); color:#fff; white-space:nowrap;}
+  button:disabled{opacity:.5; cursor:not-allowed;}
+  .nota{font-size:.78rem; color:#5a6f70; margin-top:10px; line-height:1.5;}
+  #status{text-align:center; padding:14px; font-size:.88rem; color:#5a6f70;}
+
+  .hasilList{margin-top:16px;}
+  .pItem{border:1.5px solid var(--line); border-radius:12px; padding:14px; margin-bottom:10px; cursor:pointer; transition:.15s;}
+  .pItem:hover{border-color:var(--teal-500); background:var(--mist);}
+  .pItem b{display:block; font-size:.98rem;}
+  .pItem small{color:#5a6f70; font-size:.8rem;}
+
+  /* Tiket */
+  #tiketBox{display:none; text-align:center;}
+  #tiketBox.show{display:block;}
+  .backBtn{background:var(--mist); color:var(--ink); border:1.5px solid var(--line); font-size:.82rem; padding:9px 14px; margin-bottom:8px; float:left;}
+  .tNama{font-family:'Space Grotesk'; font-weight:700; font-size:1.15rem; margin:6px 0 2px; clear:both;}
+  .tOrg{font-size:.82rem; color:#5a6f70; margin-bottom:14px;}
+  #qr{display:flex; justify-content:center; margin:8px 0 12px;}
+  #qr img,#qr canvas{border:1px solid var(--line); border-radius:12px; padding:12px;}
+  .tKod{font-family:'Space Grotesk'; font-weight:700; letter-spacing:.1em; font-size:1.05rem;}
+  .arahan{background:var(--mist); border-radius:12px; padding:14px; font-size:.8rem; text-align:left; color:#3c5253; margin-top:16px; line-height:1.55;}
+  .arahan b{display:block; margin-bottom:5px; color:var(--ink);}
+</style>
+</head>
+<body>
+  <div class="wrap">
+    <div class="kepala">
+      <h1>PKSP 2026</h1>
+      <p>Semak Tiket Pendaftaran Persidangan PKSP 2026 Anda</p>
+    </div>
+    <div class="kad">
+      <div id="carianBox">
+        <label>Taip nama atau nombor telefon anda</label>
+        <div class="cariRow">
+          <input id="input" placeholder="Cth: Siti Aminah / 0123456789" autocomplete="off">
+          <button id="btnCari" onclick="cari()">Cari</button>
+        </div>
+        <p class="nota">Masukkan sekurang-kurangnya 3 huruf nama anda. Jika nama tidak dijumpai, sila hubungi urus setia.</p>
+        <div id="status"></div>
+        <div class="hasilList" id="hasilList"></div>
+      </div>
+
+      <div id="tiketBox">
+        <button class="backBtn" onclick="kembali()">← Cari semula</button>
+        <div class="tNama" id="tNama"></div>
+        <div class="tOrg" id="tOrg"></div>
+        <div id="qr"></div>
+        <div class="tKod" id="tKod"></div>
+        <div class="arahan">
+          <b>Simpan tiket ini</b>
+          1. <b>Tangkap layar (screenshot)</b> QR code di atas.<br>
+          2. Simpan dalam telefon anda.<br>
+          3. Pada hari persidangan, tuju ke <b>Lorong A</b> dan tunjukkan QR untuk daftar masuk pantas.
+        </div>
+      </div>
+    </div>
+    <p style="text-align:center;color:rgba(255,255,255,.5);font-size:.72rem;margin-top:16px;">Kaunter dibuka jam 2:30 petang · Hotel Perdana, Kota Bharu</p>
+  </div>
+
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+import { initializeFirestore, collection, onSnapshot }
+  from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+
+/* ⚠️ GANTIKAN dengan config sebenar (sama seperti index.html) */
+const firebaseConfig = {
+  apiKey: "AIzaSyAGbkR3VSfD-7LzzFiQsLttdI3rvsSYku4",
+  authDomain: "qestion-conference-talk.firebaseapp.com",
+  databaseURL: "https://qestion-conference-talk-default-rtdb.firebaseio.com",
+  projectId: "qestion-conference-talk",
+  storageBucket: "qestion-conference-talk.firebasestorage.app",
+  messagingSenderId: "476595318754",
+  appId: "1:476595318754:web:fba0fcaa72bb3120cc93bb",
+  measurementId: "G-GTRG4VJLM3"
+};
+const app = initializeApp(firebaseConfig);
+const db = initializeFirestore(app, { experimentalForceLongPolling: true });
+const KOLEKSI = "peserta_pksp2026";
+
+const $ = id => document.getElementById(id);
+let semuaPeserta = [], sedia = false;
+
+$("status").textContent = "Memuatkan senarai peserta…";
+onSnapshot(collection(db, KOLEKSI), snap=>{
+  semuaPeserta = snap.docs.map(d=>({ id:d.id, ...d.data() }));
+  sedia = true; $("status").textContent = "";
+}, err=>{ console.error(err); $("status").textContent = "Gagal memuatkan. Semak sambungan internet dan muat semula halaman."; });
+
+function escHtml(s){ return String(s??"").replace(/[&<>"]/g,m=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[m])); }
+
+window.cari = ()=>{
+  if(!sedia){ $("status").textContent="Sila tunggu, senarai sedang dimuatkan…"; return; }
+  const q = ($("input").value||"").trim().toLowerCase();
+  const list = $("hasilList");
+  $("status").textContent="";
+  if(q.length < 3){ $("status").textContent="Sila taip sekurang-kurangnya 3 huruf."; list.innerHTML=""; return; }
+  const telQ = q.replace(/\D/g,"");
+  const hasil = semuaPeserta.filter(p=>{
+    const nama=(p.nama||"").toLowerCase();
+    const tel=(p.telefon||"").replace(/\D/g,"");
+    return nama.includes(q) || (telQ.length>=3 && tel.includes(telQ));
+  }).slice(0,12);
+  if(!hasil.length){ $("status").textContent="Nama tidak dijumpai. Cuba ejaan lain atau hubungi urus setia."; list.innerHTML=""; return; }
+  list.innerHTML = hasil.map(p=>`
+    <div class="pItem" onclick='paparTiket(${JSON.stringify(p.id)})'>
+      <b>${escHtml(p.nama)}</b>
+      <small>${escHtml(p.organisasi||"")}${p.negeri?" · "+escHtml(p.negeri):""}</small>
+    </div>`).join("");
+};
+
+$("input").addEventListener("keydown", e=>{ if(e.key==="Enter") cari(); });
+
+window.paparTiket = id=>{
+  const p = semuaPeserta.find(x=>x.id===id); if(!p) return;
+  $("tNama").textContent = p.nama||"";
+  $("tOrg").textContent = [p.jawatan,p.organisasi].filter(Boolean).join(" · ");
+  $("tKod").textContent = p.kod||"";
+  $("qr").innerHTML="";
+  new QRCode($("qr"), { text:(p.kod||"").toUpperCase(), width:210, height:210, correctLevel:QRCode.CorrectLevel.M });
+  $("carianBox").style.display="none";
+  $("tiketBox").classList.add("show");
+  window.scrollTo(0,0);
+};
+
+window.kembali = ()=>{
+  $("tiketBox").classList.remove("show");
+  $("carianBox").style.display="block";
+};
+</script>
+</body>
+</html>
