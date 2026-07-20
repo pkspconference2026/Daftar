@@ -212,13 +212,15 @@ import { initializeFirestore, doc, getDoc, collection, getDocs, query, where, li
 /* =====================================================================
    ⚙️  TETAPAN — sila semak / ubah ikut projek Hafiz
    ===================================================================== */
-const FIREBASE_CONFIG = {
-  apiKey: "MASUKKAN_APIKEY",
+const firebaseConfig = {
+  apiKey: "AIzaSyAGbkR3VSfD-7LzzFiQsLttdI3rvsSYku4",
   authDomain: "qestion-conference-talk.firebaseapp.com",
+  databaseURL: "https://qestion-conference-talk-default-rtdb.firebaseio.com",
   projectId: "qestion-conference-talk",
-  storageBucket: "qestion-conference-talk.appspot.com",
-  messagingSenderId: "MASUKKAN_SENDER_ID",
-  appId: "MASUKKAN_APP_ID"
+  storageBucket: "qestion-conference-talk.firebasestorage.app",
+  messagingSenderId: "476595318754",
+  appId: "1:476595318754:web:fba0fcaa72bb3120cc93bb",
+  measurementId: "G-GTRG4VJLM3"
 };
 
 const TETAPAN = {
@@ -316,17 +318,17 @@ if (paramNama || url.get('contoh')){
 // --- Firebase ---
 let db = null;
 function konfigOK(){
-  return !Object.values(FIREBASE_CONFIG).some(v => String(v).startsWith('MASUKKAN'));
+  return !Object.values(firebaseConfig).some(v => String(v).startsWith('MASUKKAN'));
 }
 async function mulakanFirebase(){
   if (!konfigOK()){
     kotakCari.classList.add('sembunyi');
     paparStatus('⚠️','Firebase belum dikonfigurasi',
-      'Sila masukkan kredensi Firebase sebenar dalam FIREBASE_CONFIG. Untuk lihat rupa sijil, buka pautan dengan ?contoh=1', true);
+      'Sila masukkan kredensi Firebase sebenar dalam firebaseConfig. Untuk lihat rupa sijil, buka pautan dengan ?contoh=1', true);
     return;
   }
   try{
-    const app = initializeApp(FIREBASE_CONFIG);
+    const app = initializeApp(firebaseConfig);
     // WAJIB kekal untuk ISP Malaysia
     db = initializeFirestore(app, { experimentalForceLongPolling: true });
   }catch(e){
