@@ -13,8 +13,8 @@
   :root{
     --hijau:#1f7a3d; --teks:#1a1a1a; --lembut:#5b6b60; --bg:#eef2ee; --kad:#fff;
     /* --- Kedudukan nama (boleh ubah di ?laras=1 atau di CONFIG bawah) --- */
-    --nama-atas:32%;            /* kedudukan menegak (tengah teks nama) */
-    --nama-saiz:40px;           /* saiz font pada paparan 794px lebar */
+    --nama-atas:30.5%;          /* kedudukan menegak (tengah teks nama) */
+    --nama-saiz:27px;           /* saiz font pada paparan 794px lebar */
     --nama-warna:#14532d;
     --nama-font:'Playfair Display', serif;
     /* --- Kategori/peranan (PESERTA, AJK, URUSETIA…) --- */
@@ -157,15 +157,13 @@ import { initializeFirestore, doc, getDoc, collection, getDocs, query, where, li
 /* =====================================================================
    ⚙️  TETAPAN
    ===================================================================== */
-const firebaseConfig = {
-  apiKey: "AIzaSyAGbkR3VSfD-7LzzFiQsLttdI3rvsSYku4",
+const FIREBASE_CONFIG = {
+  apiKey: "MASUKKAN_APIKEY",
   authDomain: "qestion-conference-talk.firebaseapp.com",
-  databaseURL: "https://qestion-conference-talk-default-rtdb.firebaseio.com",
   projectId: "qestion-conference-talk",
-  storageBucket: "qestion-conference-talk.firebasestorage.app",
-  messagingSenderId: "476595318754",
-  appId: "1:476595318754:web:fba0fcaa72bb3120cc93bb",
-  measurementId: "G-GTRG4VJLM3"
+  storageBucket: "qestion-conference-talk.appspot.com",
+  messagingSenderId: "MASUKKAN_SENDER_ID",
+  appId: "MASUKKAN_APP_ID"
 };
 
 const TETAPAN = {
@@ -181,8 +179,8 @@ const TETAPAN = {
 
 /* --- Kedudukan nama peserta atas design (laras di ?laras=1) --- */
 const NAMA = {
-  atas : 32,                         // % menegak (tengah teks)
-  saiz : 40,                         // px (pada paparan 794px lebar)
+  atas : 30.5,                       // % menegak (tengah teks)
+  saiz : 27,                         // px (pada paparan 794px lebar)
   warna: "#14532d",
   font : "'Playfair Display', serif",
   besar: true                        // huruf besar semua
