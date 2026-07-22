@@ -114,7 +114,7 @@
   <!-- Notis terkunci (papar sebelum tarikh pelepasan) -->
   <div class="status sembunyi" id="notis">
     <div class="ikon">📅</div>
-    <h2>Muat Turun Sijil Belum Dibuka</h2>
+    <h2>Sijil Belum Dibuka</h2>
     <p>Sijil penyertaan akan tersedia untuk dimuat turun mulai <b id="notisTarikh"></b>, selepas persidangan tamat.</p>
     <div id="kiraDetik" style="margin-top:16px;font-family:'Space Grotesk',monospace;font-weight:700;font-size:1.05rem;color:var(--hijau)"></div>
   </div>
@@ -233,7 +233,11 @@ const PELEPASAN = {
   tarikh: "2026-08-04T12:00:00+08:00",          // auto-buka pada masa ini
   label : "4 Ogos 2026, 12:00 tengah hari"      // teks dipapar kepada peserta
 };
-function sijilDibuka(){ return Date.now() >= new Date(PELEPASAN.tarikh).getTime(); }
+function sijilDibuka(){
+  // Mod pratonton untuk demo (bos) — buka gate masa sahaja, kehadiran tetap disemak
+  if(new URLSearchParams(location.search).has('pratonton')) return true;
+  return Date.now() >= new Date(PELEPASAN.tarikh).getTime();
+}
 
 const akar = document.documentElement.style;
 function pasangGayaNama(){
