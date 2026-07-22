@@ -220,6 +220,13 @@ const KATEGORI = {
 };
 /* ===================================================================== */
 
+/* --- Masa sijil dibuka untuk muat turun (waktu Malaysia, UTC+8) --- */
+const PELEPASAN = {
+  tarikh: "2026-08-04T12:00:00+08:00",          // auto-buka pada masa ini
+  label : "4 Ogos 2026, 12:00 tengah hari"      // teks dipapar kepada peserta
+};
+function sijilDibuka(){ return Date.now() >= new Date(PELEPASAN.tarikh).getTime(); }
+
 const akar = document.documentElement.style;
 function pasangGayaNama(){
   akar.setProperty('--nama-atas', NAMA.atas + '%');
@@ -307,6 +314,11 @@ function proses(d,idDok){
     paparStatus('🪪','Belum Check-In','Sijil hanya tersedia selepas anda check-in di kaunter pendaftaran. Jumpa kami di sana!',true);
     return;
   }
+  if(!sijilDibuka()){
+    paparStatus('📅','Sijil Belum Tersedia',
+      'Terima kasih atas kehadiran anda. Sijil penyertaan boleh dimuat turun mulai '+PELEPASAN.label+', selepas persidangan tamat.',true);
+    return;
+  }
   paparSijil(ambilNama(d), ambilKategori(d));
 }
 function tidakDijumpai(){
@@ -362,7 +374,7 @@ window.cariPeserta=async function(){
         +(sub?`<br><span style="color:#5b6b60;font-size:12.5px">${sub}</span>`:'');
       b.onclick=()=>{
         if(!hadir){ paparStatus('🪪','Belum Check-In','Sijil hanya tersedia selepas check-in di kaunter.',true); return; }
-        idSemasa=d.id; paparSijil(ambilNama(d), ambilKategori(d));
+        proses(d, d.id);
       };
       hasil.appendChild(b);
     });
