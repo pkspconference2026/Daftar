@@ -1,55 +1,434 @@
-rules_version = '2';
-service cloud.firestore {
-  match /databases/{database}/documents {
-    function isModerator() {
-      // Tukar emel di bawah kepada akaun moderator sebenar dalam Firebase Authentication.
-      return request.auth != null
-             && request.auth.token.email in ["eagosjr@gmail.com"];
-    }
-    function validQuestion(data) {
-      return data.text is string
-             && data.text.size() > 0
-             && data.text.size() <= 280
-             && data.name is string
-             && data.status in ["pending", "approved", "answered", "rejected"]
-             && data.voteCount is int
-             && data.voteCount >= 0
-             && data.sessionId is string;
-    }
-    function validPeserta(d) {
-      return d.nama is string && d.nama.size() > 0 && d.nama.size() <= 150
-             && d.kod is string
-             && d.kategori is string
-             && d.hadir is bool;
-    }
-    match /peserta_pksp2026/{docId} {
-      allow read: if true;
-      allow create: if validPeserta(request.resource.data);
-      allow update: if request.resource.data
-                        .diff(resource.data).affectedKeys()
-                        .hasOnly(["hadir", "lorong", "masaHadir"])
-                    && request.resource.data.hadir == true;
-      allow delete: if false;
-    }
-    match /questions/{questionId} {
-      allow read: if true;
-      allow create: if validQuestion(request.resource.data)
-                    && request.resource.data.status == "pending"
-                    && request.resource.data.voteCount == 0;
-      allow update: if request.resource.data.diff(resource.data).affectedKeys().hasOnly(["voteCount"])
-                    && request.resource.data.voteCount is int
-                    && request.resource.data.voteCount >= 0;
-      allow update: if isModerator()
-                    && validQuestion(request.resource.data);
-      allow delete: if false;
-    }
-    match /votes/{voteId} {
-      allow read: if true;
-      allow create: if request.resource.data.questionId is string
-                    && request.resource.data.deviceId is string
-                    && voteId == request.resource.data.questionId + "_" + request.resource.data.deviceId;
-      allow delete: if true;
-      allow update: if false;
-    }
+<!DOCTYPE html>
+<html lang="ms">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Sijil Penyertaan — PKSP 2026</title>
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@500;600;700&family=Poppins:wght@400;600;700&display=swap" rel="stylesheet">
+
+<style>
+  :root{
+    --hijau:#1f7a3d; --teks:#1a1a1a; --lembut:#5b6b60; --bg:#eef2ee; --kad:#fff;
+    /* --- Kedudukan nama (boleh ubah di ?laras=1 atau di CONFIG bawah) --- */
+    --nama-atas:30.5%;          /* kedudukan menegak (tengah teks nama) */
+    --nama-saiz:27px;           /* saiz font pada paparan 794px lebar */
+    --nama-warna:#14532d;
+    --nama-font:'Playfair Display', serif;
+    /* --- Kategori/peranan (PESERTA, AJK, URUSETIA…) --- */
+    --kat-atas:42%;
+    --kat-saiz:28px;
+    --kat-warna:#1f7a3d;
+    --kat-font:'Poppins', sans-serif;
   }
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{font-family:'Poppins',Arial,sans-serif;background:var(--bg);color:var(--teks);
+    min-height:100vh;display:flex;flex-direction:column;align-items:center;padding:24px 12px 60px}
+
+  .panel{width:100%;max-width:820px;text-align:center;margin-bottom:20px}
+  .panel h1{font-family:'Playfair Display',serif;font-size:26px;color:var(--hijau);margin-bottom:4px}
+  .panel p{color:var(--lembut);font-size:14px}
+
+  .kotak{background:var(--kad);border-radius:16px;padding:22px;box-shadow:0 8px 30px rgba(0,0,0,.08);
+    max-width:820px;width:100%;margin-bottom:22px}
+  .cari{display:flex;gap:8px;flex-wrap:wrap;justify-content:center}
+  .cari input{flex:1;min-width:220px;padding:12px 14px;border:1.5px solid #d5ddd6;border-radius:10px;font-size:15px}
+  .cari input:focus{outline:none;border-color:var(--hijau)}
+  .senarai{margin-top:12px;text-align:left}
+  .senarai button{display:block;width:100%;text-align:left;padding:12px 14px;border:1px solid #e3e9e4;
+    background:#f7faf7;border-radius:10px;margin-bottom:8px;cursor:pointer;font-size:15px}
+  .senarai button:hover{border-color:var(--hijau);background:#eef6ef}
+
+  .status{max-width:820px;width:100%;text-align:center;padding:26px;border-radius:14px;background:var(--kad);
+    box-shadow:0 8px 30px rgba(0,0,0,.06);margin-bottom:22px}
+  .status .ikon{font-size:40px;margin-bottom:8px}
+  .status h2{font-size:19px;margin-bottom:6px}
+  .status p{color:var(--lembut);font-size:14.5px;line-height:1.5}
+  .amaran{background:#fff4f4;border:1px solid #f3c9c9;color:#9b2c2c}
+
+  .butang-baris{display:flex;gap:10px;flex-wrap:wrap;justify-content:center;margin-bottom:26px}
+  .btn{border:none;border-radius:12px;padding:14px 22px;font-size:15px;font-weight:700;cursor:pointer;
+    display:inline-flex;align-items:center;gap:8px;transition:.15s}
+  .btn-utama{background:var(--hijau);color:#fff}.btn-utama:hover{background:#186231}
+  .btn-wa{background:#25d366;color:#fff}.btn-wa:hover{background:#1eb658}
+  .btn:disabled{opacity:.5;cursor:not-allowed}
+
+  .pratonton{width:100%;max-width:820px;display:flex;justify-content:center;overflow:hidden}
+  .skala{transform-origin:top center}
+
+  /* ===== SIJIL — background = design Hafiz, nama ditindih ===== */
+  #sijil{
+    width:794px;height:1123px;position:relative;background:#fff;
+    background-image:url('sijil_bg.png');background-size:cover;background-position:center;
+  }
+  #namaPeserta{
+    position:absolute;left:0;right:0;top:var(--nama-atas);transform:translateY(-50%);
+    text-align:center;padding:0 9%;
+    font-family:var(--nama-font);font-weight:600;font-size:var(--nama-saiz);
+    color:var(--nama-warna);line-height:1.15;
+  }
+  #kategoriPeserta{
+    position:absolute;left:0;right:0;top:var(--kat-atas);transform:translateY(-50%);
+    text-align:center;padding:0 12%;
+    font-family:var(--kat-font);font-weight:700;font-size:var(--kat-saiz);
+    color:var(--kat-warna);line-height:1.15;letter-spacing:.5px;
+  }
+
+  /* ===== Panel laras (?laras=1) ===== */
+  #laras{position:fixed;right:14px;top:14px;width:250px;background:#fff;border-radius:14px;
+    box-shadow:0 10px 40px rgba(0,0,0,.25);padding:16px;font-size:13px;z-index:99}
+  #laras h3{font-size:14px;margin-bottom:10px;color:var(--hijau)}
+  #laras label{display:block;margin:10px 0 3px;font-weight:600}
+  #laras input[type=range]{width:100%}
+  #laras input[type=color]{width:100%;height:32px;border:none;background:none}
+  #laras .nilai{background:#f2f5f2;border-radius:8px;padding:8px;margin-top:10px;font-family:monospace;font-size:11.5px;white-space:pre-wrap;word-break:break-word}
+  #laras button{width:100%;margin-top:8px;padding:9px;border:none;border-radius:8px;background:var(--hijau);color:#fff;font-weight:700;cursor:pointer}
+
+  .sembunyi{display:none!important}
+  @media (max-width:520px){.panel h1{font-size:22px}.btn{padding:13px 18px;font-size:14px}}
+</style>
+</head>
+<body>
+
+  <div class="panel">
+    <h1>Sijil Penyertaan</h1>
+    <p>Persidangan Pegawai Kerja Sosial Perubatan Malaysia Ke-29</p>
+  </div>
+
+  <div class="kotak" id="kotakCari">
+    <div class="cari">
+      <input id="inputCari" type="text" placeholder="Taip nama, no. telefon, atau kod tiket…" oninput="cariPeserta()">
+      <button class="btn btn-utama" onclick="cariPeserta()">Cari</button>
+    </div>
+    <div class="senarai" id="hasilCari"></div>
+  </div>
+
+  <div class="status sembunyi" id="kotakStatus">
+    <div class="ikon" id="statusIkon">⏳</div>
+    <h2 id="statusTajuk">Sedang memuatkan…</h2>
+    <p id="statusMesej">Sila tunggu sebentar.</p>
+  </div>
+
+  <div class="butang-baris sembunyi" id="butangBaris">
+    <button class="btn btn-utama" id="btnMuatTurun" onclick="muatTurunPDF()">⬇️ Muat Turun Sijil (PDF)</button>
+    <button class="btn btn-wa" id="btnWA" onclick="kongsiWA()">💬 Kongsi WhatsApp</button>
+  </div>
+
+  <div class="pratonton sembunyi" id="pratonton">
+    <div class="skala" id="skala">
+      <div id="sijil">
+        <div id="namaPeserta">&nbsp;</div>
+        <div id="kategoriPeserta"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Panel laras (papar bila ?laras=1) -->
+  <div id="laras" class="sembunyi">
+    <h3>🎯 Laras kedudukan</h3>
+    <div style="font-weight:700;color:#14532d;margin-top:4px">NAMA</div>
+    <label>Menegak (atas %) — <span id="lblAtas"></span></label>
+    <input type="range" id="rngAtas" min="0" max="100" step="0.5">
+    <label>Saiz font — <span id="lblSaiz"></span>px</label>
+    <input type="range" id="rngSaiz" min="18" max="72" step="1">
+    <label>Warna</label>
+    <input type="color" id="inpWarna">
+    <div style="font-weight:700;color:#1f7a3d;margin-top:12px">KATEGORI</div>
+    <label>Menegak (atas %) — <span id="lblKatAtas"></span></label>
+    <input type="range" id="rngKatAtas" min="0" max="100" step="0.5">
+    <label>Saiz font — <span id="lblKatSaiz"></span>px</label>
+    <input type="range" id="rngKatSaiz" min="14" max="56" step="1">
+    <label>Warna</label>
+    <input type="color" id="inpKatWarna">
+    <div class="nilai" id="nilaiSalin"></div>
+    <button onclick="salinNilai()">📋 Salin nilai</button>
+  </div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+
+<!-- Papar sebarang ralat pada skrin (bukan senyap dalam console) -->
+<script>
+  function __ralatSkrin(msg){
+    var d=document.getElementById('__ralat');
+    if(!d){ d=document.createElement('div'); d.id='__ralat';
+      d.style.cssText='position:fixed;top:0;left:0;right:0;z-index:9999;background:#b91c1c;color:#fff;'
+        +'font:12.5px/1.5 monospace;padding:10px 14px;white-space:pre-wrap;box-shadow:0 2px 10px rgba(0,0,0,.3)';
+      (document.body||document.documentElement).appendChild(d); }
+    d.textContent += msg + "\n";
+  }
+  window.addEventListener('error', function(e){
+    __ralatSkrin('⚠ Ralat: '+(e.message||e.error)+(e.filename?(' ('+e.filename.split('/').pop()+':'+e.lineno+')'):''));
+  });
+  window.addEventListener('unhandledrejection', function(e){
+    var r=e.reason; __ralatSkrin('⚠ Ralat sambungan: '+((r&&(r.message||r.code))||r));
+  });
+</script>
+
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+import { initializeFirestore, doc, getDoc, collection, getDocs, query, where, limit }
+  from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+
+/* =====================================================================
+   ⚙️  TETAPAN
+   ===================================================================== */
+const FIREBASE_CONFIG = {
+  apiKey: "AIzaSyAGbkR3VSfD-7LzzFiQsLttdI3rvsSYku4",
+  authDomain: "qestion-conference-talk.firebaseapp.com",
+  databaseURL: "https://qestion-conference-talk-default-rtdb.firebaseio.com",
+  projectId: "qestion-conference-talk",
+  storageBucket: "qestion-conference-talk.firebasestorage.app",
+  messagingSenderId: "476595318754",
+  appId: "1:476595318754:web:fba0fcaa72bb3120cc93bb",
+  measurementId: "G-GTRG4VJLM3"
+};
+
+const TETAPAN = {
+  koleksiPeserta : "peserta_pksp2026",
+  medanNama      : "nama",
+  medanHadir     : "hadir",
+  medanTelefon   : "telefon",
+  medanKod       : "kod",
+  medanOrganisasi: "organisasi",
+  medanNegeri    : "negeri",
+  paramId        : "id"
+};
+
+/* --- Kedudukan nama peserta atas design (laras di ?laras=1) --- */
+const NAMA = {
+  atas : 30.5,                       // % menegak (tengah teks)
+  saiz : 27,                         // px (pada paparan 794px lebar)
+  warna: "#14532d",
+  font : "'Playfair Display', serif",
+  besar: true                        // huruf besar semua
+};
+
+/* --- Kedudukan & sumber kategori/peranan (PESERTA, AJK, URUSETIA…) --- */
+const KATEGORI = {
+  atas : 42,
+  saiz : 28,
+  warna: "#1f7a3d",
+  font : "'Poppins', sans-serif",
+  besar: true,
+  medan: "kategori",                 // medan Firestore untuk peranan
+  // label kemas (pilihan) — kalau nilai tersimpan pendek/huruf kecil
+  label: { peserta:"PESERTA", ajk:"AJK", urusetia:"URUSETIA", vip:"VIP",
+           penceramah:"PENCERAMAH", fasilitator:"FASILITATOR" }
+};
+/* ===================================================================== */
+
+const akar = document.documentElement.style;
+function pasangGayaNama(){
+  akar.setProperty('--nama-atas', NAMA.atas + '%');
+  akar.setProperty('--nama-saiz', NAMA.saiz + 'px');
+  akar.setProperty('--nama-warna', NAMA.warna);
+  akar.setProperty('--nama-font', NAMA.font);
+  akar.setProperty('--kat-atas', KATEGORI.atas + '%');
+  akar.setProperty('--kat-saiz', KATEGORI.saiz + 'px');
+  akar.setProperty('--kat-warna', KATEGORI.warna);
+  akar.setProperty('--kat-font', KATEGORI.font);
 }
+pasangGayaNama();
+
+const $ = id => document.getElementById(id);
+const kotakCari=$('kotakCari'), kotakStatus=$('kotakStatus'), butangBaris=$('butangBaris'), pratonton=$('pratonton');
+let namaSemasa="", idSemasa="";
+
+function skalaPratonton(){
+  const lebar=Math.min(pratonton.clientWidth,820);
+  const s=Math.min(1,lebar/794);
+  const el=$('skala'); el.style.transform=`scale(${s})`; el.style.height=(1123*s)+'px';
+}
+window.addEventListener('resize',skalaPratonton);
+
+function paparStatus(ikon,tajuk,mesej,amaran=false){
+  kotakStatus.classList.remove('sembunyi');
+  kotakStatus.classList.toggle('amaran',amaran);
+  $('statusIkon').textContent=ikon; $('statusTajuk').textContent=tajuk; $('statusMesej').textContent=mesej;
+}
+function sembunyiStatus(){ kotakStatus.classList.add('sembunyi'); }
+
+const ambilNama = d => d[TETAPAN.medanNama]||d.nama||d.name||d.namaPenuh||d.fullName||"";
+function ambilKategori(d){
+  let v = String(d[KATEGORI.medan]||'').trim();
+  if(!v) return "";
+  const kunci = v.toLowerCase();
+  if(KATEGORI.label && KATEGORI.label[kunci]) return KATEGORI.label[kunci];
+  return KATEGORI.besar ? v.toUpperCase() : v;
+}
+function sudahHadir(d){
+  const v=d[TETAPAN.medanHadir];
+  if(typeof v==='boolean') return v;
+  return v===true||v==='hadir'||v==='Hadir'||d.status==='hadir'||d.status==='Hadir';
+}
+
+function paparSijil(nama, kategori=""){
+  namaSemasa = NAMA.besar ? nama.toUpperCase() : nama;
+  $('namaPeserta').textContent = namaSemasa;
+  $('kategoriPeserta').textContent = kategori;
+  kotakCari.classList.add('sembunyi'); sembunyiStatus();
+  butangBaris.classList.remove('sembunyi'); pratonton.classList.remove('sembunyi');
+  requestAnimationFrame(skalaPratonton);
+}
+
+/* --- URL --- */
+const url=new URLSearchParams(location.search);
+const paramNama=url.get('nama'), idPeserta=url.get(TETAPAN.paramId), kodPeserta=url.get('kod');
+const paramKategori=url.get('kategori');
+const modLaras=url.get('laras');
+// (pemanggilan dipindah ke hujung skrip — selepas semua const/let diisytihar)
+
+/* --- Firebase --- */
+let db=null;
+const konfigOK=()=>!Object.values(FIREBASE_CONFIG).some(v=>String(v).startsWith('MASUKKAN'));
+async function mulakanFirebase(){
+  if(!konfigOK()){
+    kotakCari.classList.add('sembunyi');
+    paparStatus('⚠️','Firebase belum dikonfigurasi',
+      'Sila isi kredensi sebenar dalam FIREBASE_CONFIG. Untuk lihat rupa sijil: buka dengan ?contoh=1',true);
+    return;
+  }
+  try{
+    const app=initializeApp(FIREBASE_CONFIG);
+    db=initializeFirestore(app,{experimentalForceLongPolling:true}); // WAJIB untuk ISP Malaysia
+  }catch(e){ paparStatus('⚠️','Ralat sambungan',e.message,true); return; }
+
+  if(kodPeserta) muatIkutKod(kodPeserta);
+  else if(idPeserta) muatIkutId(idPeserta);
+  else kotakCari.classList.remove('sembunyi');
+}
+
+function proses(d,idDok){
+  idSemasa=idDok;
+  if(!sudahHadir(d)){
+    paparStatus('🪪','Belum Check-In','Sijil hanya tersedia selepas anda check-in di kaunter pendaftaran. Jumpa kami di sana!',true);
+    return;
+  }
+  paparSijil(ambilNama(d), ambilKategori(d));
+}
+function tidakDijumpai(){
+  paparStatus('🔍','Peserta tidak dijumpai','Rekod tidak wujud. Sila guna pautan dari tiket anda atau cari nama di bawah.',true);
+  kotakCari.classList.remove('sembunyi');
+}
+async function muatIkutKod(kod){
+  paparStatus('⏳','Sedang menyemak…','Mengesahkan kehadiran anda.');
+  try{
+    const q=query(collection(db,TETAPAN.koleksiPeserta),where(TETAPAN.medanKod,'==',kod),limit(1));
+    const ss=await getDocs(q);
+    if(ss.empty){ tidakDijumpai(); return; }
+    proses(ss.docs[0].data(),ss.docs[0].id);
+  }catch(e){ paparStatus('⚠️','Ralat',e.message,true); }
+}
+async function muatIkutId(id){
+  paparStatus('⏳','Sedang menyemak…','Mengesahkan kehadiran anda.');
+  try{
+    const snap=await getDoc(doc(db,TETAPAN.koleksiPeserta,id));
+    if(snap.exists()){ proses(snap.data(),snap.id); return; }
+    const q=query(collection(db,TETAPAN.koleksiPeserta),where(TETAPAN.medanKod,'==',id),limit(1));
+    const ss=await getDocs(q);
+    if(!ss.empty){ proses(ss.docs[0].data(),ss.docs[0].id); return; }
+    tidakDijumpai();
+  }catch(e){ paparStatus('⚠️','Ralat',e.message,true); }
+}
+
+/* --- Carian nama/telefon/kod (tapis client-side, elak indeks komposit) --- */
+let cacheSemua=null;
+window.cariPeserta=async function(){
+  const q=$('inputCari').value.trim().toLowerCase();
+  const hasil=$('hasilCari');
+  if(q.length<2){ hasil.innerHTML=''; return; }
+  hasil.innerHTML='<p style="color:#5b6b60;padding:8px">Mencari…</p>';
+  try{
+    if(!cacheSemua){
+      const ss=await getDocs(collection(db,TETAPAN.koleksiPeserta));
+      cacheSemua=ss.docs.map(x=>({id:x.id,...x.data()}));
+    }
+    const padanan=cacheSemua.filter(d=>{
+      const nama=String(ambilNama(d)).toLowerCase();
+      const tel=String(d[TETAPAN.medanTelefon]||'').toLowerCase();
+      const kod=String(d[TETAPAN.medanKod]||'').toLowerCase();
+      return nama.includes(q)||tel.includes(q)||kod.includes(q);
+    }).slice(0,15);
+    if(!padanan.length){ hasil.innerHTML='<p style="color:#9b2c2c;padding:8px">Tiada padanan dijumpai.</p>'; return; }
+    hasil.innerHTML='';
+    padanan.forEach(d=>{
+      const b=document.createElement('button');
+      const hadir=sudahHadir(d);
+      const sub=[d[TETAPAN.medanOrganisasi],d[TETAPAN.medanNegeri]].filter(Boolean).join(' · ');
+      b.innerHTML=`<b>${ambilNama(d)}</b>${hadir?'':' <span style="color:#9b2c2c;font-size:12px">(belum check-in)</span>'}`
+        +(sub?`<br><span style="color:#5b6b60;font-size:12.5px">${sub}</span>`:'');
+      b.onclick=()=>{
+        if(!hadir){ paparStatus('🪪','Belum Check-In','Sijil hanya tersedia selepas check-in di kaunter.',true); return; }
+        idSemasa=d.id; paparSijil(ambilNama(d), ambilKategori(d));
+      };
+      hasil.appendChild(b);
+    });
+  }catch(e){ hasil.innerHTML=`<p style="color:#9b2c2c;padding:8px">Ralat: ${e.message}</p>`; }
+};
+$('inputCari')?.addEventListener('keydown',e=>{ if(e.key==='Enter') window.cariPeserta(); });
+
+/* --- Muat turun PDF (A4 potret) --- */
+window.muatTurunPDF=async function(){
+  const btn=$('btnMuatTurun'); btn.disabled=true; btn.textContent='⏳ Menyediakan…';
+  try{
+    await document.fonts.ready;
+    const kanvas=await html2canvas($('sijil'),{scale:3.1,useCORS:true,backgroundColor:'#ffffff'});
+    const imej=kanvas.toDataURL('image/png');
+    const { jsPDF }=window.jspdf;
+    const pdf=new jsPDF({orientation:'portrait',unit:'mm',format:'a4'});
+    pdf.addImage(imej,'PNG',0,0,210,297);
+    pdf.save('Sijil_PKSP2026_'+namaSemasa.replace(/[^\w]+/g,'_')+'.pdf');
+  }catch(e){ alert('Gagal menjana PDF: '+e.message); }
+  finally{ btn.disabled=false; btn.textContent='⬇️ Muat Turun Sijil (PDF)'; }
+};
+
+/* --- Kongsi WhatsApp --- */
+window.kongsiWA=function(){
+  const pautan=location.origin+location.pathname+(idSemasa?('?'+TETAPAN.paramId+'='+idSemasa):'');
+  window.open('https://wa.me/?text='+encodeURIComponent(`Sijil Penyertaan PKSP Ke-29 saya 🎓\n${pautan}`),'_blank');
+};
+
+/* =========================================================
+   MOD LARAS — gerakkan nama sampai tepat, ambil nilai
+   ========================================================= */
+function mulaLaras(){
+  paparSijil("WAN HASZAWATI BINTI WAN MUHAMMAD", "PESERTA");
+  butangBaris.classList.add('sembunyi');
+  $('laras').classList.remove('sembunyi');
+  const rA=$('rngAtas'), rS=$('rngSaiz'), cW=$('inpWarna');
+  const kA=$('rngKatAtas'), kS=$('rngKatSaiz'), kW=$('inpKatWarna');
+  rA.value=NAMA.atas; rS.value=NAMA.saiz; cW.value=NAMA.warna;
+  kA.value=KATEGORI.atas; kS.value=KATEGORI.saiz; kW.value=KATEGORI.warna;
+  function kemas(){
+    NAMA.atas=parseFloat(rA.value); NAMA.saiz=parseInt(rS.value); NAMA.warna=cW.value;
+    KATEGORI.atas=parseFloat(kA.value); KATEGORI.saiz=parseInt(kS.value); KATEGORI.warna=kW.value;
+    pasangGayaNama();
+    $('lblAtas').textContent=NAMA.atas; $('lblSaiz').textContent=NAMA.saiz;
+    $('lblKatAtas').textContent=KATEGORI.atas; $('lblKatSaiz').textContent=KATEGORI.saiz;
+    $('nilaiSalin').textContent=
+      `NAMA → atas:${NAMA.atas}, saiz:${NAMA.saiz}, warna:"${NAMA.warna}"\n`+
+      `KATEGORI → atas:${KATEGORI.atas}, saiz:${KATEGORI.saiz}, warna:"${KATEGORI.warna}"`;
+  }
+  [rA,rS,cW,kA,kS,kW].forEach(el=>el.oninput=kemas);
+  // anak panah keyboard laras NAMA menegak
+  document.addEventListener('keydown',e=>{
+    if(e.key==='ArrowUp'){ rA.value=(parseFloat(rA.value)-0.5).toFixed(1); kemas(); e.preventDefault(); }
+    if(e.key==='ArrowDown'){ rA.value=(parseFloat(rA.value)+0.5).toFixed(1); kemas(); e.preventDefault(); }
+  });
+  kemas();
+}
+window.salinNilai=function(){
+  navigator.clipboard?.writeText($('nilaiSalin').textContent);
+  alert('Nilai disalin! Tampal padankan dalam const NAMA dan const KATEGORI dalam sijil.html.');
+};
+
+/* === MULA (dipanggil di hujung supaya semua const/let sudah siap) === */
+if(modLaras){ mulaLaras(); }
+else if(paramNama || url.get('contoh')){ paparSijil(paramNama||"AHMAD ZAKI BIN ABDULLAH", (paramKategori||"PESERTA").toUpperCase()); }
+else { mulakanFirebase(); }
+</script>
+</body>
+</html>
