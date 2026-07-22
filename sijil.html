@@ -111,6 +111,14 @@
     <p id="statusMesej">Sila tunggu sebentar.</p>
   </div>
 
+  <!-- Notis terkunci (papar sebelum tarikh pelepasan) -->
+  <div class="status sembunyi" id="notis">
+    <div class="ikon">📅</div>
+    <h2>Sijil Belum Dibuka</h2>
+    <p>Sijil penyertaan akan tersedia untuk dimuat turun mulai <b id="notisTarikh"></b>, selepas persidangan tamat.</p>
+    <div id="kiraDetik" style="margin-top:16px;font-family:'Space Grotesk',monospace;font-weight:700;font-size:1.05rem;color:var(--hijau)"></div>
+  </div>
+
   <div class="butang-baris sembunyi" id="butangBaris">
     <button class="btn btn-utama" id="btnMuatTurun" onclick="muatTurunPDF()">⬇️ Muat Turun Sijil (PDF)</button>
     <button class="btn btn-wa" id="btnWA" onclick="kongsiWA()">💬 Kongsi WhatsApp</button>
@@ -305,7 +313,24 @@ async function mulakanFirebase(){
 
   if(kodPeserta) muatIkutKod(kodPeserta);
   else if(idPeserta) muatIkutId(idPeserta);
+  else if(!sijilDibuka()) paparNotisTerkunci();
   else kotakCari.classList.remove('sembunyi');
+}
+
+function paparNotisTerkunci(){
+  kotakCari.classList.add('sembunyi');
+  $('notis').classList.remove('sembunyi');
+  $('notisTarikh').textContent = PELEPASAN.label;
+  const sasaran = new Date(PELEPASAN.tarikh).getTime();
+  const el = $('kiraDetik');
+  function tik(){
+    const baki = sasaran - Date.now();
+    if(baki <= 0){ location.reload(); return; }
+    const hari=Math.floor(baki/86400000), jam=Math.floor(baki/3600000)%24,
+          min=Math.floor(baki/60000)%60, saat=Math.floor(baki/1000)%60;
+    el.textContent = `Baki masa: ${hari} hari ${jam} jam ${min} minit ${saat} saat`;
+  }
+  tik(); setInterval(tik, 1000);
 }
 
 function proses(d,idDok){
